@@ -8,6 +8,21 @@ namespace Dwarf_net
 	/// </summary>
 	static internal class Wrapper
 	{
+		/// <summary>
+		/// Record some application command line options in libdwarf.
+		/// This is not arc/argv processing, just precooked setting
+		/// of a flag in libdwarf based on something the application wants.
+		/// </summary>
+		public struct Cmdline_Options
+		{
+			/// <summary>
+			/// if non-zero, tells libdwarf to print some detailed messages to stdout
+			/// in case certain errors are detected.
+			/// The default for this value is FALSE (0) so the extra messages are off by default.
+			/// </summary>
+			int check_verbose_mode;
+		};
+
 		private const string lib = "libdwarf.so";
 
 		/// <summary>
@@ -225,10 +240,10 @@ namespace Dwarf_net
 		/// The function sets a global flag and returns the previous value of the global flag.
 		/// <br/>
 		/// If the flag is non-zero (the default) then the applicable
-        /// <c>.rela</c> section (if one exists) will be processed and applied to any DWARF section
-        /// when it is read in.
-        /// <br/>
-        /// If the flag is zero no such relocation-application is attempted.
+		/// <c>.rela</c> section (if one exists) will be processed and applied to any DWARF section
+		/// when it is read in.
+		/// <br/>
+		/// If the flag is zero no such relocation-application is attempted.
 		/// <br/>
 		/// Not all machine types (elf header e_machine) or all relocations are supported, but then very few r elocation types apply to DWA RF debug sections.
 		/// <br/>
@@ -241,6 +256,12 @@ namespace Dwarf_net
 		[DllImport(lib)]
 		public static extern int dwarf_set_reloc_application(int apply);
 
-		
+		/// <summary>
+		/// The function copies a Cmdline_Options structure from consumer code to libdwarf.
+		/// </summary>
+		/// <param name="options"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_record_cmdline_options(Cmdline_Options options);
 	}
 }
