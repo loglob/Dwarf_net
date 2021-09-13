@@ -100,6 +100,9 @@ namespace Dwarf_net
 		/// <param name="true_path_bufferlen">
 		/// The capacity of <paramref name="true_path_out_buffer"/>.
 		/// </param>
+        /// <param name="access">
+        /// Pass in zero.
+        /// </param>
 		/// <param name="groupnumber">
 		/// Indicates which group is to be accessed.
 		/// Group one is normal dwarf sections such as .debug_info.
@@ -143,14 +146,15 @@ namespace Dwarf_net
 		public static extern int dwarf_init_path(
 			string path,
 			IntPtr true_path_out_buffer,
-			ulong true_path_bufferlen,
-			ulong groupnumber,
+			uint true_path_bufferlen,
+			ulong access,
+			uint groupnumber,
 			[MarshalAs(UnmanagedType.FunctionPtr)]
 			Handler errhand,
 			IntPtr errarg,
 			out IntPtr dbg,
 			IntPtr reserved1,
-			IntPtr reserved2,
+			ulong reserved2,
 			IntPtr reserved3,
 			out IntPtr error
 		);
@@ -168,6 +172,9 @@ namespace Dwarf_net
 		/// The seek position of the file associated with <paramref name="fd"/>
 		/// is undefined upon return of <see cref="dwarf_init_b"/>.
 		/// </param>
+        /// <param name="access">
+        /// Pass in zero.
+        /// </param>
 		/// <param name="groupnumber">
 		/// Indicates which group is to be accessed.
 		/// Group one is normal dwarf sections such as .debug_info.
@@ -209,7 +216,8 @@ namespace Dwarf_net
 		[DllImport(lib)]
 		public static extern int dwarf_init_b(
 			int fd,
-			ulong groupnumber,
+			ulong access,
+			uint groupnumber,
 			[MarshalAs(UnmanagedType.FunctionPtr)]
 			Handler errhand,
 			IntPtr errarg,

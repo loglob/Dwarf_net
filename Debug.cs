@@ -23,9 +23,9 @@ namespace Dwarf_net
                 throw new ArgumentNullException(nameof(path));
 
             switch(Wrapper.dwarf_init_path(path,
-                IntPtr.Zero, 0, 0,
+                IntPtr.Zero, 0, 0, 0,
                 null, IntPtr.Zero, out this.handle,
-                IntPtr.Zero, IntPtr.Zero, IntPtr.Zero,
+                IntPtr.Zero, 0, IntPtr.Zero,
 				out IntPtr err))
 			{
 				case Wrapper.DW_DLV_ERROR:
@@ -48,7 +48,7 @@ namespace Dwarf_net
         /// <exception cref="DwarfException"></exception>
 		public Debug(int fd)
 		{
-			switch(Wrapper.dwarf_init_b(fd, 0, null, IntPtr.Zero, out this.handle, out IntPtr err))
+			switch(Wrapper.dwarf_init_b(fd, 0, 0, null, IntPtr.Zero, out this.handle, out IntPtr err))
 			{
 				case Wrapper.DW_DLV_ERROR:
                     throw new DwarfException(err);
