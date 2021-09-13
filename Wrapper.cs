@@ -206,5 +206,19 @@ namespace Dwarf_net
 			IntPtr dbg,
 			IntPtr error
 		);
+
+		/// <summary>
+		/// The function sets a global flag and returns the previous value of the global flag.
+		/// <br/>
+		/// If the stringcheck global flag is zero (the default)
+		/// libdwarf does string length validity checks (the checks do slow libdwarf down very slightly).
+		/// If the stringcheck global flag is non-zero libdwarf does not do string length validity checks.
+		/// <br/>
+		/// The global flag is really just 8 bits long, upperbits are not noticed or recorded.
+		/// </summary>
+		/// <param name="stringcheck">The new stringcheck value</param>
+		/// <returns>The previous stringcheck value</returns>
+		[DllImport(lib)]
+		public static extern int dwarf_set_stringcheck(int stringcheck);
 	}
 }
