@@ -186,8 +186,25 @@ namespace Dwarf_net
 			IntPtr error
 		);
 
-		/** Omitted functions:
+		/* Omitted functions:
 			* dwarf_set_de_alloc_flag() because we never want manual deallocation
 		*/
+
+		/// <summary>
+		/// Releases all Libdwarf internal resources associated with the descriptor <paramref name="dbg"/>,
+		/// and invalidates <paramref name="dbg"/>.
+		/// </summary>
+		/// <param name="dbg">A descriptor returned by a dwarf_init function</param>
+		/// <param name="error">A pointer to a Dwarf_error.</param>
+		/// <returns>
+		/// <see cref="DW_DLV_ERROR"/> if there is an error during the finishing operation.
+		/// <br/>
+		/// <see cref="DW_DLV_OK"/> for a successful operation.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_finish(
+			IntPtr dbg,
+			IntPtr error
+		);
 	}
 }
