@@ -186,42 +186,8 @@ namespace Dwarf_net
 			IntPtr error
 		);
 
-		/// <summary>
-		/// Sets and returns a flag value applying to the current running instance of libdwarf.
-		/// It’s action sets an internal value, and that value should be set/changed
-		/// (if you wish to do that) before any other libdwarf calls.
-		/// <br/>
-		/// The flag setting is global in libdwarf, not per open Dwarf_Debug.
-		/// The call can be made before or after opening a Dwarf_Debug,
-		/// but for maximum time savings call this before opening a Dwarf_Debug.
-		/// <br/>
-		/// By default libdwarf keeps track of all its internal allocations.
-		/// So if the documentation here says you should do dwarf_dealloc() calls
-		/// (or other calls documented here for specific functions) and you omit some
-		/// or all of them then calling dwarf_finish() will clean up all those allocations
-		/// left undone.
-		/// <br/>
-		/// It is best to ignore this call unless you have gigantic DWARF sections
-		/// and you need whatever percent speed improvement from libdwarf that you can get.
-		/// If you do use it then by all means use tools such as <c>cc --fsanitize</c>
-		/// or <c>valgrind</c> to ensure there are no leaks in your application
-		/// (at least given your test cases).
-		/// </summary>
-		/// <param name="v">
-		/// If 0, then libdwarf will not keep track of allocations so your code must
-		/// do all dwarf_dealloc() calls as defined below.
-		/// <br/>
-		/// If 1, restores the setting to its default value so from that point all
-		/// new internal allocations will be tracked and dwarf_finish() can clean the new ones up.
-		/// </param>
-		/// <returns>
-		/// The previous value of the internal flag:
-		/// <br/>
-		/// One (1) is the default, meaning record allocations.
-		/// <br/>
-		/// Zero (0) is the other possible value, meaning do not record libdwarf allocations.
-		/// </returns>
-		[DllImport(lib)]
-		public static extern int dwarf_set_de_alloc_flag(int v);
+		/** Omitted functions:
+			* dwarf_set_de_alloc_flag() because we never want manual deallocation
+		*/
 	}
 }
