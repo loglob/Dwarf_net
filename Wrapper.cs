@@ -37,7 +37,8 @@ namespace Dwarf_net
 		/// An opaque pointer to error information.
 		/// </param>
 		/// <param name="errarg">
-		/// A copy of the value passed in to dwarf_elf_init_b() as the errarg() argument.
+		/// A copy of the value passed in to <see cref="dwarf_init_path"/>
+        /// or <see cref="dwarf_init_b"/> as the errarg argument.
 		/// Typically the init function would be passed a pointer to an application-created
 		/// struct containing the data the application needs to do what it wants to do in
 		/// the error handler.
@@ -106,10 +107,12 @@ namespace Dwarf_net
 		/// Group two is DWARF5 dwo split-dwarf dwarf sections such as .debug_info.dwo.
 		/// <br/>
 		/// Groups three and higher are for COMDAT groups.
-		/// If an object file has only sections from one of the groups then passing zero will access that group.
+		/// If an object file has only sections from one of the groups then passing
+        /// zero will access that group.
 		/// Otherwise passing zero will access only group one.
 		/// <br/>
-		/// See dwarf_sec_group_sizes() and dwarf_sec_group_map() for more group information.
+		/// See <see cref="dwarf_sec_group_sizes"/> and <see cref="dwarf_sec_group_map"/>
+        /// for more group information.
 		/// <br/>
 		/// Typically pass in 0 to groupnumber. Non-elf objects do not use this field.
 		/// </param>
@@ -142,6 +145,7 @@ namespace Dwarf_net
 			IntPtr true_path_out_buffer,
 			ulong true_path_bufferlen,
 			ulong groupnumber,
+			[MarshalAs(UnmanagedType.FunctionPtr)]
 			Handler errhand,
 			IntPtr errarg,
 			out IntPtr dbg,
@@ -159,10 +163,10 @@ namespace Dwarf_net
 		/// (i.e. not a p ipe, socket, device, /proc entry, e tc.),
 		/// be opened with the at least as much permission as specified by the access argument,
 		/// and cannot be closed or used as an argument to any system calls by the client until
-		/// after <see cref="dwarf_finish"/>() is called.
+		/// after <see cref="dwarf_finish"/> is called.
 		/// <br/>
 		/// The seek position of the file associated with <paramref name="fd"/>
-		/// is undefined upon return of <see cref="dwarf_init_b"/>().
+		/// is undefined upon return of <see cref="dwarf_init_b"/>.
 		/// </param>
 		/// <param name="groupnumber">
 		/// Indicates which group is to be accessed.
@@ -174,7 +178,8 @@ namespace Dwarf_net
 		/// If an object file has only sections from one of the groups then passing zero will access that group.
 		/// Otherwise passing zero will access only group one.
 		/// <br/>
-		/// See dwarf_sec_group_sizes() and dwarf_sec_group_map() for more group information.
+		/// See <see cref="dwarf_sec_group_sizes"/> and <see cref="dwarf_sec_group_map"/>
+        /// for more group information.
 		/// <br/>
 		/// Typically pass in 0 to groupnumber. Non-elf objects do not use this field.
 		/// </param>
@@ -205,6 +210,7 @@ namespace Dwarf_net
 		public static extern int dwarf_init_b(
 			int fd,
 			ulong groupnumber,
+			[MarshalAs(UnmanagedType.FunctionPtr)]
 			Handler errhand,
 			IntPtr errarg,
 			out IntPtr dbg,
