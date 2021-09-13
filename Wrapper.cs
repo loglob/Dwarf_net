@@ -8,6 +8,7 @@ namespace Dwarf_net
 	/// </summary>
 	static internal class Wrapper
 	{
+#region Types
 		/// <summary>
 		/// Record some application command line options in libdwarf.
 		/// This is not arc/argv processing, just precooked setting
@@ -22,21 +23,6 @@ namespace Dwarf_net
 			/// </summary>
 			int check_verbose_mode;
 		};
-
-		private const string lib = "libdwarf.so";
-
-		/// <summary>
-		/// Indicates that a file didn't exist
-		/// </summary>
-		const int DW_DLV_NO_ENTRY = -1;
-		/// <summary>
-		/// Indicates that no error occurred.
-		/// </summary>
-		const int DW_DLV_OK = 0;
-		/// <summary>
-		/// Indicates that some error occurred.
-		/// </summary>
-		const int DW_DLV_ERROR = 1;
 
 		/// <summary>
 		/// Pointer to error handler function.
@@ -57,6 +43,30 @@ namespace Dwarf_net
 		/// the error handler.
 		/// </param>
 		public delegate void Handler(IntPtr error, IntPtr errarg);
+
+#endregion
+
+#region Constants
+		private const string lib = "libdwarf.so";
+
+		/// <summary>
+		/// Indicates that a file didn't exist
+		/// </summary>
+		public const int DW_DLV_NO_ENTRY = -1;
+		/// <summary>
+		/// Indicates that no error occurred.
+		/// </summary>
+		public const int DW_DLV_OK = 0;
+		/// <summary>
+		/// Indicates that some error occurred.
+		/// </summary>
+		public const int DW_DLV_ERROR = 1;
+#endregion
+
+#region Functions
+		/* Omitted functions:
+			* dwarf_set_de_alloc_flag() because we never want manual deallocation
+		*/
 
 		/// <summary>
 		/// 
@@ -201,10 +211,6 @@ namespace Dwarf_net
 			IntPtr error
 		);
 
-		/* Omitted functions:
-			* dwarf_set_de_alloc_flag() because we never want manual deallocation
-		*/
-
 		/// <summary>
 		/// Releases all Libdwarf internal resources associated with the descriptor <paramref name="dbg"/>,
 		/// and invalidates <paramref name="dbg"/>.
@@ -263,5 +269,6 @@ namespace Dwarf_net
 		/// <returns></returns>
 		[DllImport(lib)]
 		public static extern int dwarf_record_cmdline_options(Cmdline_Options options);
+#endregion
 	}
 }
