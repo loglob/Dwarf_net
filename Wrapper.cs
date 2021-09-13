@@ -144,11 +144,11 @@ namespace Dwarf_net
 			ulong groupnumber,
 			Handler errhand,
 			IntPtr errarg,
-			IntPtr dbg,
+			out IntPtr dbg,
 			IntPtr reserved1,
 			IntPtr reserved2,
 			IntPtr reserved3,
-			IntPtr error
+			out IntPtr error
 		);
 
 		/// <summary>
@@ -207,8 +207,8 @@ namespace Dwarf_net
 			ulong groupnumber,
 			Handler errhand,
 			IntPtr errarg,
-			IntPtr dbg,
-			IntPtr error
+			out IntPtr dbg,
+			out IntPtr error
 		);
 
 		/// <summary>
@@ -225,7 +225,7 @@ namespace Dwarf_net
 		[DllImport(lib)]
 		public static extern int dwarf_finish(
 			IntPtr dbg,
-			IntPtr error
+			out IntPtr error
 		);
 
 		/// <summary>
