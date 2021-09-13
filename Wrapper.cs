@@ -220,5 +220,27 @@ namespace Dwarf_net
 		/// <returns>The previous stringcheck value</returns>
 		[DllImport(lib)]
 		public static extern int dwarf_set_stringcheck(int stringcheck);
+
+		/// <summary>
+		/// The function sets a global flag and returns the previous value of the global flag.
+		/// <br/>
+		/// If the flag is non-zero (the default) then the applicable
+        /// <c>.rela</c> section (if one exists) will be processed and applied to any DWARF section
+        /// when it is read in.
+        /// <br/>
+        /// If the flag is zero no such relocation-application is attempted.
+		/// <br/>
+		/// Not all machine types (elf header e_machine) or all relocations are supported, but then very few r elocation types apply to DWA RF debug sections.
+		/// <br/>
+		/// The global flag is really just 8 bits long, upperbits are not noticed or recorded.
+		/// <br/>
+		/// It seems unlikely anyone will need to call this function.
+		/// </summary>
+		/// <param name="apply">The new value</param>
+		/// <returns>The previous value</returns>
+		[DllImport(lib)]
+		public static extern int dwarf_set_reloc_application(int apply);
+
+		
 	}
 }
