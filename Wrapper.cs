@@ -38,7 +38,7 @@ namespace Dwarf_net
 		/// </param>
 		/// <param name="errarg">
 		/// A copy of the value passed in to <see cref="dwarf_init_path"/>
-        /// or <see cref="dwarf_init_b"/> as the errarg argument.
+		/// or <see cref="dwarf_init_b"/> as the errarg argument.
 		/// Typically the init function would be passed a pointer to an application-created
 		/// struct containing the data the application needs to do what it wants to do in
 		/// the error handler.
@@ -66,7 +66,13 @@ namespace Dwarf_net
 
 #region Functions
 		/* Omitted functions:
+			* dwarf_init_path_dl() because I don't currently plan to have debuglink support (yet) 
+			* dwarf_init() due to being functionally identical to dwarf_init_b()
 			* dwarf_set_de_alloc_flag() because we never want manual deallocation
+			* dwarf_object_init_b() due to being out-of-scope
+			* dwarf_elf_init[_b]() due to being deprecated
+			* dwarf_get_elf() due to only being useful in unsupported context
+			* dwarf_object_detector_fd(), dwarf_object_detector_path(): out of scope
 		*/
 
 		/// <summary>
@@ -100,9 +106,9 @@ namespace Dwarf_net
 		/// <param name="true_path_bufferlen">
 		/// The capacity of <paramref name="true_path_out_buffer"/>.
 		/// </param>
-        /// <param name="access">
-        /// Pass in zero.
-        /// </param>
+		/// <param name="access">
+		/// Pass in zero.
+		/// </param>
 		/// <param name="groupnumber">
 		/// Indicates which group is to be accessed.
 		/// Group one is normal dwarf sections such as .debug_info.
@@ -111,11 +117,11 @@ namespace Dwarf_net
 		/// <br/>
 		/// Groups three and higher are for COMDAT groups.
 		/// If an object file has only sections from one of the groups then passing
-        /// zero will access that group.
+		/// zero will access that group.
 		/// Otherwise passing zero will access only group one.
 		/// <br/>
 		/// See <see cref="dwarf_sec_group_sizes"/> and <see cref="dwarf_sec_group_map"/>
-        /// for more group information.
+		/// for more group information.
 		/// <br/>
 		/// Typically pass in 0 to groupnumber. Non-elf objects do not use this field.
 		/// </param>
@@ -172,9 +178,9 @@ namespace Dwarf_net
 		/// The seek position of the file associated with <paramref name="fd"/>
 		/// is undefined upon return of <see cref="dwarf_init_b"/>.
 		/// </param>
-        /// <param name="access">
-        /// Pass in zero.
-        /// </param>
+		/// <param name="access">
+		/// Pass in zero.
+		/// </param>
 		/// <param name="groupnumber">
 		/// Indicates which group is to be accessed.
 		/// Group one is normal dwarf sections such as .debug_info.
@@ -186,7 +192,7 @@ namespace Dwarf_net
 		/// Otherwise passing zero will access only group one.
 		/// <br/>
 		/// See <see cref="dwarf_sec_group_sizes"/> and <see cref="dwarf_sec_group_map"/>
-        /// for more group information.
+		/// for more group information.
 		/// <br/>
 		/// Typically pass in 0 to groupnumber. Non-elf objects do not use this field.
 		/// </param>
@@ -283,6 +289,218 @@ namespace Dwarf_net
 		/// <returns></returns>
 		[DllImport(lib)]
 		public static extern int dwarf_record_cmdline_options(Cmdline_Options options);
+
+		/// <summary>
+		/// Enables cross-object access of DWARF data.
+		/// If a DWARF5 Package object has <see cref="DW_FORM_addrx"/> or
+		/// <see cref="DW_FORM_GNU_addr_index"/> or one of the other
+		/// indexed forms in DWARF5 in an address attribute one needs both the Package file and the
+		/// executable to extract the actual address with <see cref="dwarf_formaddr"/>.
+		/// The utility function <see cref="dwarf_addr_form_is_indexed"/> is a handy way
+		/// to know if an address form is indexed.
+		/// <br/>
+		/// One does a normal <see cref="dwarf_init_path"/> or <see cref="dwarf_init_b"/>
+		/// on each object and then ties the two together.
+		/// <br/>
+		/// When done with both <paramref name="dbg"/> and <paramref name="tieddbg"/>
+		/// do the normal finishing operations on both in any order.
+		/// <br/>
+		/// <example>
+		/// It is possible to undo the tieing operation with:
+		/// <br/>
+		/// <c>dwarf_set_tied_dbg(dbg, IntPtr.Zero, out error);</c>
+		/// </example>
+		/// It is not necessary to undo the tieing operation before finishing on the dbg and tieddbg
+		/// </summary>
+		/// <param name="dbg">A reference returned by dwarf_init_*</param>
+		/// <param name="tieddbg">A reference returned by dwarf_init_*</param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_set_tied_dbg(IntPtr dbg, IntPtr tieddbg, out IntPtr error);
+
+		/// <summary>
+		/// Returns <see cref="DW_DLV_OK"/> and sets <paramref name="tieddbg_out"/>
+		/// to the pointer to the ’tied’ Dwarf_Debug.
+		/// If there is no ’tied’ object <paramref name="tieddbg_out"/> is set to NULL.
+		/// </summary>
+		/// <param name="dbg">A reference returned by dwarf_init_*</param>
+		/// <param name="tieddbg_out">The tied reference</param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// On success, returns <see cref="DW_DLV_OK"/>
+		/// and sets <paramref name="tieddbg_out"/> as described.
+		/// <br/>
+		/// On error, returns <see cref="DW_DLV_ERROR"/>.
+		/// <br/>
+		/// Never returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_tied_dbg(IntPtr dbg, out IntPtr tieddbg_out, out IntPtr error);
+
+		/// <summary>
+		/// Elf sections are sometimes compressed to reduce the disk footprint of the sections.
+		/// It’s sometimes interesting to library users what the real name was in the object file
+		/// and whether it was compressed. Libdwarf decompresses such sections automatically.
+		/// It’s not usually necessary to know the true name or anything about compression.
+		/// </summary>
+		/// <param name="dbg">
+		/// A reference returned by dwarf_init_*
+		/// </param>
+		/// <param name="std_section_name">
+		/// A standard section name such as ".debug_info"
+		/// </param>
+		/// <param name="actual_sec_name_out">
+		/// A string.
+		/// Must not be free()d
+		/// </param>
+		/// <param name="marked_compressed">
+		/// If non-zero, means the section name started with .zdebug (indicating compression was done).
+		/// </param>
+		/// <param name="marked_zlib_compressed">
+		/// if non-zero, means the initial bytes of the section started with the ASCII characters
+		/// ZLIB and the section was compressed.
+		/// </param>
+		/// <param name="marked_shf_compressed">
+		/// if non-zero means the Elf section sh_flag SHF_COMPRESSED is set
+		/// and the section was compressed.
+		/// </param>
+		/// <param name="compressed_length"></param>
+		/// <param name="uncompressed_length"></param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// On success the function returns <see cref="DW_DLV_OK"/>, and
+		/// (through the other arguments) the true section name and
+		/// a flag which, if non-zero means the section was compressed and a flag which,
+		/// if non-zero means the section had the Elf section flag SHF_COMPRESSED set.
+		/// <br/>
+		/// Returns <see cref="DW_DLV_NO_ENTRY"/> if the section name passed in is not used by libdwarf
+		/// for this object file.
+		/// <br/>
+		/// Returns <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_real_section_name(
+			IntPtr dbg,
+			string std_section_name,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string actual_sec_name_out,
+			out byte marked_compressed,
+			out byte marked_zlib_compressed,
+			out byte marked_shf_compressed,
+			out ulong compressed_length,
+			out ulong uncompressed_length,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The package version is set in config.h (from its value in configure.ac and in
+		/// CMakeLists.txt in the source tree) at the build time of the library.
+		/// <br/>
+		/// It’s not entirely clear how this actually helps. But there is a request for this
+		/// and we provide it as of 23 October 2019.
+		/// </summary>
+		/// <returns>
+		/// A pointer to a static string in standard ISO date format (i.e. "20180718")
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_package_version();
+
+		/// <summary>
+		/// Once the Dwarf_Debug is open the group information is set and it will not
+		/// change for the life of this Dwarf_Debug.
+		/// </summary>
+		/// <param name="dbg">An open Dwarf_Debug</param>
+		/// <param name="section_count_out">
+		/// The number of sections in the object. Many of the sections will be irrelevant to libdwarf.
+		/// </param>
+		/// <param name="group_count_out">
+		/// The number of groups in the object (as libdwarf counts them).
+		/// An OSO will have exactly one group.
+		/// A DWP object will have exactly one group.
+		/// <br/>
+		/// If is more than one group consumer code will likely want to open additional 
+		/// Dwarf_Debug objects and request relevant information to process the DWARF 
+		/// contents. An executable or a DWP object will always
+		/// have a <paramref name="group_count_out"/> of one(1).
+		/// <br/>
+		/// An executable or a shared library cannot have any COMDAT section groups as 
+		/// the linker will have dealt with them.
+		/// </param>
+		/// <param name="selected_group_out">
+		/// The group number that this Dwarf_Debug will focus on.
+		/// See <see cref="dwarf_sec_group_map"/> for additional details on how
+		/// <paramref name="selected_group_out"/> is interpreted
+		/// </param>
+		/// <param name="map_entry_count_out">
+		/// The number of entries in the map.
+		/// See <see cref="dwarf_sec_group_map"/>.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// Returns <see cref="DW_DLV_ERROR"/> on failure and sets <paramref name="error"/>
+		/// <br/>
+		/// The initial implementation never fails but callers should allow for that possibility.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_sec_group_sizes(
+			IntPtr dbg,
+			out ulong section_count_out,
+			out ulong group_count_out,
+			out ulong selected_group_out,
+			out ulong map_entry_count_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The caller must allocate map_entry_count arrays used in the following three
+		/// arguments the and pass the appropriate pointer into the function as well as passing in
+		/// <paramref name="map_entry_count"/> itself.
+		/// <br/>
+		/// The map entries returned cover all the DWARF related sections in the object though the 
+		/// selected_group value will dictate which of the sections in the Dwarf_Debug will
+		/// actually be accessed via the usual libdwarf functions.
+		/// That is, only sections in the selected group may be directly accessed though libdwarf
+		/// may indirectly access sections in section group one(1) so relevant details can be accessed,
+		/// such as abbreviation tables etc. Describing the details of this access outside the current
+		/// selected_group goes beyond what this document covers (as of this writing).
+		/// </summary>
+		/// <param name="dbg">Any open Dwarf_Debug</param>
+		/// <param name="map_entry_count">
+		/// The capacity of <paramref name="group_numbers_array"/>, 
+		/// <paramref name="section_numbers_array"/> and
+		/// <paramref name="sec_names_array"/>.
+		/// <br/>
+		/// Usually retrieved from <see cref="dwarf_sec_group_sizes"/>
+		/// </param>
+		/// <param name="group_numbers_array">
+		/// The valid group numbers, (1, 2 or >=3 for COMDAT groups)
+		/// </param>
+		/// <param name="section_numbers_array">
+		/// The ELF section numbers relevant to DWARF
+		/// </param>
+		/// <param name="sec_names_array">
+		/// The ELF section name of the section with the number at the
+		/// same position in <paramref name="section_numbers_array"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// On error the function will return <see cref="DW_DLV_ERROR"/> or <see cref="DW_DLV_NO_ENTRY"/>
+		/// which indicates a serious problem with the <paramref name="dbg"/> reference.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_sec_group_map(
+			IntPtr dbg,
+			ulong map_entry_count,
+			ulong[] group_numbers_array,
+			ulong[] section_numbers_array,
+			IntPtr[] sec_names_array,
+			out IntPtr error 
+		);
+
+
 #endregion
 	}
 }
