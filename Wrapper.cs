@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using static Dwarf_net.Defines;
 
 namespace Dwarf_net
 {
@@ -47,36 +48,21 @@ namespace Dwarf_net
 
 #endregion
 
-#region Constants
 		private const string lib = "libdwarf.so";
-
-		/// <summary>
-		/// Indicates that a file didn't exist
-		/// </summary>
-		public const int DW_DLV_NO_ENTRY = -1;
-		/// <summary>
-		/// Indicates that no error occurred.
-		/// </summary>
-		public const int DW_DLV_OK = 0;
-		/// <summary>
-		/// Indicates that some error occurred.
-		/// </summary>
-		public const int DW_DLV_ERROR = 1;
-#endregion
 
 #region Functions
 		/* Omitted functions:
-			* dwarf_init_path_dl() because I don't currently plan to have debuglink support (yet) 
-			* dwarf_init() due to being functionally identical to dwarf_init_b()
-			* dwarf_set_de_alloc_flag() because we never want manual deallocation
-			* dwarf_object_init_b() due to being out-of-scope
-			* dwarf_elf_init[_b]() due to being deprecated
-			* dwarf_get_elf() due to only being useful in unsupported context
+			* dwarf_init_path_dl() because I don't currently plan to have debuglink support (yet)
+			* dwarf_set_de_alloc_flag(): we never want manual deallocation
+			* dwarf_object_init_b(): out-of-scope
+			* dwarf_get_elf(): only useful in unsupported context
 			* dwarf_object_detector_fd(), dwarf_object_detector_path(): out of scope
+			* dwarf_print*(): not needed
+			* various obsolete functions present only as _b or other updated replacements
 		*/
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="path">
 		/// The name of the object file
@@ -99,8 +85,8 @@ namespace Dwarf_net
 		/// suggested size.
 		/// <br/>
 		/// When you know you won’t be reading MacOS executables and won’t be accessing GNU_debuglink
-		/// executables special treatment by passing 0 as arguments to <paramref name="true_path_out_buffer"/>
-		/// and <paramref name="true_path_bufferlen"/>.
+		/// executables special treatment by passing 0 as arguments to
+		/// <paramref name="true_path_out_buffer"/> and <paramref name="true_path_bufferlen"/>.
 		/// If those are zero the MacOS/GNU_debuglink special processing will not occur.
 		/// </param>
 		/// <param name="true_path_bufferlen">
@@ -166,7 +152,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="fd">
 		/// The file descriptor associated with the fd argument must refer to an ordinary file
@@ -271,7 +257,8 @@ namespace Dwarf_net
 		/// <br/>
 		/// If the flag is zero no such relocation-application is attempted.
 		/// <br/>
-		/// Not all machine types (elf header e_machine) or all relocations are supported, but then very few r elocation types apply to DWA RF debug sections.
+		/// Not all machine types (elf header e_machine) or all relocations are supported,
+		/// but then very few relocation types apply to DWARF debug sections.
 		/// <br/>
 		/// The global flag is really just 8 bits long, upperbits are not noticed or recorded.
 		/// <br/>
@@ -419,12 +406,12 @@ namespace Dwarf_net
 		/// An OSO will have exactly one group.
 		/// A DWP object will have exactly one group.
 		/// <br/>
-		/// If is more than one group consumer code will likely want to open additional 
-		/// Dwarf_Debug objects and request relevant information to process the DWARF 
+		/// If is more than one group consumer code will likely want to open additional
+		/// Dwarf_Debug objects and request relevant information to process the DWARF
 		/// contents. An executable or a DWP object will always
 		/// have a <paramref name="group_count_out"/> of one(1).
 		/// <br/>
-		/// An executable or a shared library cannot have any COMDAT section groups as 
+		/// An executable or a shared library cannot have any COMDAT section groups as
 		/// the linker will have dealt with them.
 		/// </param>
 		/// <param name="selected_group_out">
@@ -459,7 +446,7 @@ namespace Dwarf_net
 		/// arguments the and pass the appropriate pointer into the function as well as passing in
 		/// <paramref name="map_entry_count"/> itself.
 		/// <br/>
-		/// The map entries returned cover all the DWARF related sections in the object though the 
+		/// The map entries returned cover all the DWARF related sections in the object though the
 		/// selected_group value will dictate which of the sections in the Dwarf_Debug will
 		/// actually be accessed via the usual libdwarf functions.
 		/// That is, only sections in the selected group may be directly accessed though libdwarf
@@ -469,7 +456,7 @@ namespace Dwarf_net
 		/// </summary>
 		/// <param name="dbg">Any open Dwarf_Debug</param>
 		/// <param name="map_entry_count">
-		/// The capacity of <paramref name="group_numbers_array"/>, 
+		/// The capacity of <paramref name="group_numbers_array"/>,
 		/// <paramref name="section_numbers_array"/> and
 		/// <paramref name="sec_names_array"/>.
 		/// <br/>
@@ -497,10 +484,301 @@ namespace Dwarf_net
 			ulong[] group_numbers_array,
 			ulong[] section_numbers_array,
 			IntPtr[] sec_names_array,
-			out IntPtr error 
+			out IntPtr error
 		);
 
+		/// <summary>
+		/// Reports on the section sizes
+		/// </summary>
+		/// <param name="dbg">an open Dwarf_Debug</param>
+		/// <param name="debug_info_size"></param>
+		/// <param name="debug_abbrev_size"></param>
+		/// <param name="debug_line_size"></param>
+		/// <param name="debug_loc_size"></param>
+		/// <param name="debug_aranges_size"></param>
+		/// <param name="debug_macinfo_size"></param>
+		/// <param name="debug_pubnames_size"></param>
+		/// <param name="debug_str_size"></param>
+		/// <param name="debug_frame_size"></param>
+		/// <param name="debug_ranges_size"></param>
+		/// <param name="debug_pubtypes_size"></param>
+		/// <param name="debug_types_size"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_section_max_offsets_b(
+			IntPtr dbg,
+			out ulong debug_info_size,
+			out ulong debug_abbrev_size,
+			out ulong debug_line_size,
+			out ulong debug_loc_size,
+			out ulong debug_aranges_size,
+			out ulong debug_macinfo_size,
+			out ulong debug_pubnames_size,
+			out ulong debug_str_size,
+			out ulong debug_frame_size,
+			out ulong debug_ranges_size,
+			out ulong debug_pubtypes_size,
+			out ulong debug_types_size
+		);
 
-#endregion
+		/// <summary>
+		/// Lets consumers access the object section name when no specific DIE is at hand.
+		/// This is useful for applications wanting to print the name, but of course the object
+		/// section name is not really a part of the DWA RF information.
+		///
+		/// Most applications will probably not call this function.
+		/// It can be called at any time after the Dwarf_Debug initialization is done.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="is_info">
+		/// If <paramref name="is_info"/> is non-zero, operate on the .debug_info[.dwo] section(s).
+		/// <br/>
+		/// If <paramref name="is_info"/> is zero, operate on the .debug_types[.dwo] section(s).
+		/// </param>
+		/// <param name="sec_name">
+		/// The object section name.
+		/// For non-Elf objects it is possible the string pointer returned will be NULL
+		/// or will point to an empty string.
+		/// It is up to the calling application to recognize this possibility and deal with
+		/// it appropriately.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_OK"/> and sets <paramref name="sec_name"/> on success.
+		/// <br/>
+		/// If the section does not exist the function returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// <br/>
+		/// If there is an internal error detected the function returns <see cref="DW_DLV_ERROR"/>
+		/// and sets <paramref name="error"/>.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_die_section_name(
+			IntPtr dbg,
+			int is_info,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string sec_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The next call to <see cref="dwarf_next_cu_header_d"/> returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// without reading a compilation-unit or setting *next_cu_header.
+		/// Subsequent calls to <see cref="dwarf_next_cu_header_d"/> repeat the cycle by reading 
+		/// the first compilation-unit and so on.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="is_info">
+		/// operates on the either the .debug_info section
+		/// (if <paramref name="is_info"/> is non-zero)
+		/// or .debug_types section (if <paramref name="is_info"/> is zero)
+		/// </param>
+		/// <param name="cu_header_length">The length in bytes of the compilation unit header</param>
+		/// <param name="version_stamp">
+		/// the section version, which would be (for .debug_info) 2 for
+		/// DWARF2, 3 for DWARF3, 4 for DWARF4, or 5 for DWARF5
+		/// </param>
+		/// <param name="abbred_offset">
+		/// the .debug_abbrev section offset of the abbreviations for this compilation unit
+		/// </param>
+		/// <param name="address_size">
+		/// The size of an address in this compilation unit. Which is usually 4 or 8.
+		/// </param>
+		/// <param name="offset_size">
+		/// the size in bytes of an offset for the compilation unit.
+		/// The offset size is 4 for 32bit dwarf and 8 for 64bit dwarf.
+		/// This is the offset size in dwarf data, not the address size inside the executable code.
+		/// The offset size can be 4 even if embedded in a 64bit elf file (which is normal for 64bit elf),
+		/// and can be 8 even in a 32bit elf file (which probably will never be seen in practice).
+		/// </param>
+		/// <param name="extension_size">
+		/// Only relevant if <paramref name="offset_size"/> returns 8.
+		/// The value is not normally useful but returned for completeness.
+		/// <br/>
+		/// Returns 0 if the CU is MIPS/IRIX non-standard 64bit dwarf
+		/// (MIPS/IRIX 64bit dwarf was created years before DWARF3 defined 64bit dwarf)
+		/// and returns 4 if the dwarf uses the standard 64bit extension
+		/// (the 4 is the size in bytes of the 0xffffffff in the initial length field which
+		/// indicates the following 8 bytes in the .debug_info section are the real length).
+		/// <br/>
+		/// See the DWARF3 or DWARF4 standard, section 7.4.
+		/// </param>
+		/// <param name="signature">
+		/// Only relevant if the CU has a type signature.
+		/// The 8 byte type signature of the .debug_types CU header.
+		/// </param>
+		/// <param name="typeoffset">
+		/// Only relevant the CU has a type signature.
+		/// The local offset within the CU of the the type offset the .debug_types entry
+		/// represents is assigned through the pointer.
+		/// It matters because a <see cref="DW_AT_type"/> referencing the type unit may
+		/// reference an inner type, such as a C++ class in a C++ namespace, but the type
+		/// itself has the enclosing namespace in the .debug_type type_unit.
+		/// </param>
+		/// <param name="next_cu_header">
+		/// the offset in the .debug_info section of the next compilation-unit header.
+		/// <br/>
+		/// On reading the last compilation-unit header in the .debug_info section it
+		/// contains the size of the .debug_info or debug_types section
+		/// <br/>
+		/// </param>
+		/// <param name="header_cu_type">
+		/// applicable to all CU headers.
+		/// Either <see cref="DW_UT_compile">, <see cref="DW_UT_partial"> or <see cref="DW_UT_type"> 
+		/// and identifies the header type of this CU.
+		/// <br/>
+		/// In DWARF4 a <see cref="DW_UT_type"> will be in .debug_types,
+		/// but in DWARF5 these compilation units are in .debug_info and the Debug Fission
+		/// (ie Split Dwarf) .debug_info.dwo sections.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_next_cu_header_d(
+			IntPtr dbg,
+			int is_info,
+			out ulong cu_header_length,
+			out ushort version_stamp,
+			out ulong abbred_offset,
+			out ushort address_size,
+			out ushort offset_size,
+			out ushort extension_size,
+			out ulong signature,
+			out ulong typeoffset,
+			out ulong next_cu_header,
+			out ushort header_cu_type,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="die">
+		/// The current DIE.
+		/// <br/>
+		/// If NULL, the Dwarf_Die descriptor of the first die in the compilation-unit is returned.
+		/// This die has the <see cref="DW_TAG_compile_unit"/>, <see cref="DW_TAG_partial_unit"/>,
+		/// or <see cref="DW_TAG_type_unit"/> tag.
+		/// </param>
+		/// <param name="is_info">
+		/// If non-zero then the die is assumed to refer to a .debug_info DIE.
+		///<br/> 
+		/// If zero then the die is assumed to refer to a .debug_types DIE.
+		/// <br/>
+		/// If <paramname ref="die"/> is non-NULL it is still essential for the call
+		/// to pass in <paramname ref="is_info"/> set properly to reflect the
+		/// section the DIE came from.
+		/// <br/>
+		/// The function <see cref="dwarf_get_die_infotypes_flag"/> is of interest as it
+		/// returns the proper <paramref name="is_info"/> value from any
+		/// non-NULL <paramref name="die"/>pointer.
+		/// </param>
+		/// <param name="return_sib">The sibing DIE of <paramref name="die"/></param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_ERROR"/> and sets the error pointer on error.
+		/// <br/>
+		/// If there is no sibling it returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// <br/>
+		/// When it succeeds, returns <see cref="DW_DLV_OK"/> and sets <paramref name="return_sib"/>
+		/// to the Dwarf_Die descriptor of the sibling of <paramref name="die"/>. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_siblingof_b(
+			IntPtr dbg,
+			IntPtr die,
+			int is_info,
+			out IntPtr return_sib,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The function <see cref="dwarf_siblingof"/> can be used with the
+		/// <paramref name="return_kid"> value to access the other children of <paramref name="die"/>.
+		/// </summary>
+		/// <param name="die">A DIE</param>
+		/// <param name="return_kid">Its first child</param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_ERROR"/> and sets <paramref name="error"/> on error.
+		/// <br/>
+		/// If t here is no child it returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// <br/>
+		/// When it succeeds, it returns <see cref="DW_DLV_OK"/> and sets <paramref name="return_kid"/>
+		/// to the Dwarf_Die descriptor of the first child of <paramref name="die"/>. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_child(
+			IntPtr die,
+			out IntPtr return_kid,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Retrieves a DIE from an offset of a debug section
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="offset">
+		/// The offset of a DIE in a debug section
+		/// <br/>
+		/// It is the user’s responsibility to make sure that <paramref name="offset"/>
+		/// is the start of a valid debugging information entry.
+		/// The result of passing it an invalid <paramref name="offset"/> could be chaos
+		/// </param>
+		/// <param name="is_info">
+		/// If non-zero the offset must refer to a .debug_info section offset.
+		/// <br/>
+		/// If zero the offset must refer to a .debug_types section offset.
+		/// <param name="return_die">
+		/// The Dwarf_Die descriptor of the debugging information entry at <paramref name="offset"/>
+		/// in the section containing debugging information entries i.e the .debug_info section.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_ERROR"/> and sets the <paramref name="error"/> on error.
+		/// <br/>
+		/// When it succeeds, it returns <see cref="DW_DLV_OK"/> and sets <paramref name="return_die"/>
+		/// <br/>
+		/// A return of <see cerf="DW_DLV_NO_ENTRY"/> means that the offset in the section is of
+		/// a byte containing all 0 bits, indicating that there is no abbreviation code.
+		/// Meaning this ’die offset’ is not the offset of a real die, but is instead an
+		/// offset of a null die, a padding die, or of some random zero byte:
+		/// this should not be returned in normal use.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_offdie_b(
+			IntPtr dbg,
+			ulong offset,
+			int is_info,
+			out IntPtr return_die,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// When used correctly in a depth-first walk of a DIE tree this function validates
+		/// that any <see cref="DW_AT_sibling"/> attribute gives the same offset as the
+		/// direct tree walk. That is the only purpose of this function.
+		/// </summary>
+		/// <param name="sibling"></param>
+		/// <param name="offset"></param>
+		/// <returns>
+		/// returns <see cref="DW_DLV_OK"/> if the last die processed in a depth-first DIE
+		/// tree walk was the same offset as generated by a call to <see cref="dwarf_siblingof"/>.
+		/// Meaning that the <see cref="DW_AT_sibling"/> attribute value, if any, was correct
+		/// <br/>
+		/// If the conditions are not met then <see cref="DW_DLV_ERROR"/> is returned and
+		/// <paramref name="offset"/> is set to the offset in the .debug_info section of
+		/// the last DIE processed.
+		/// If the application prints the offset a knowledgeable user may be able to figure
+		/// out what the compiler did wrong.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int validate_die_sibling(
+			IntPtr sibling,
+			out ulong offset
+		);
+
+		
+
+		#endregion
 	}
 }
