@@ -51,15 +51,19 @@ namespace Dwarf_net
 		private const string lib = "libdwarf.so";
 
 #region Functions
-		/* Omitted functions:
-			* dwarf_init_path_dl() because I don't currently plan to have debuglink support (yet)
-			* dwarf_set_de_alloc_flag(): we never want manual deallocation
-			* dwarf_object_init_b(): out-of-scope
-			* dwarf_get_elf(): only useful in unsupported context
-			* dwarf_object_detector_fd(), dwarf_object_detector_path(): out of scope
-			* dwarf_print*(): not needed
-			* various obsolete functions present only as _b or other updated replacements
-		*/
+/* Omitted functions:
+	* dwarf_init_path_dl() because I don't currently plan to have debuglink support (yet)
+	* dwarf_set_de_alloc_flag(): we never want manual deallocation
+	* dwarf_object_init_b(): out-of-scope
+	* dwarf_get_elf(): only useful in unsupported context
+	* dwarf_object_detector_fd(), dwarf_object_detector_path(): out of scope
+	* dwarf_print*(): not needed
+	* dwarf_dieoffset() and dwarf_die_cu_offset(): redundant
+	* dwarf_ptr_CU_offset(): nonexistant? also references nonexistant type? TODO: look into that
+	* dwarf_die_abbrev_children_flag(): "it is not generally needed"
+	* dwarf_die_abbrev_global_offset(): "not normally needed by applications"
+	* various obsolete functions present only as _b or other updated replacements
+*/
 
 		/// <summary>
 		///
@@ -777,8 +781,416 @@ namespace Dwarf_net
 			out ulong offset
 		);
 
-		
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <returns>
+		/// Returns the section flag indicating which section <paramref name="die"/> originates from.
+		/// If the returned value is non-zero the DIE originates from the .debug_info section.
+		/// If the returned value is zero the DIE originates from the .debug_types section.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_die_infotypes_flag(IntPtr die);
 
-		#endregion
+		/// <summary>
+		/// Retrieves various data items from the CU header
+		/// <br/>
+		/// Summing <paramref name="offset_size"/> and <paramref name="extension_size"/>
+		/// gives the length of the CU length field, which is immediately followed by the CU header.
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="version"></param>
+		/// <param name="is_info"></param>
+		/// <param name="is_dwo">
+		/// will surely always be 0 as dwo/dwp .debug_info cannot be skeleton CUs
+		/// </param>
+		/// <param name="offset_size"></param>
+		/// <param name="address_size"></param>
+		/// <param name="extension_size"></param>
+		/// <param name="signature">
+		/// Returned if there a signature in the DWARF5 CU header or the CU die.
+		/// </param>
+		/// <param name="offset_of_length">
+		/// The offset of the first byte of the length field of the CU.
+		/// </param>
+		/// <param name="total_byte_length">
+		/// the length of data in the CU counting from the first byte
+		/// at <paramref name="offset_of_length"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_cu_header_basics(
+			IntPtr die,
+			out ushort version,
+			out int is_info,
+			out int is_dwo,
+			out ushort offset_size,
+			out ushort address_size,
+			out ushort extension_size,
+			// note: why is this a double pointer?? (actually ulong**/Dwarf_Sig8**)
+			out IntPtr signature,
+			out ulong offset_of_length,
+			out ulong total_byte_length,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="tagval">
+		/// The tag of <paramref name="die"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		public static extern int dwarf_tag(
+			IntPtr die,
+			out ushort tagval,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// a utility function to make it simple to determine if a form is one of the
+		/// indexed forms (there are several such in DWARF5).
+		/// See DWARF5 section 7.5.5 Classes and Forms for more information
+		/// </summary>
+		/// <param name="form"></param>
+		/// <returns>
+		/// Returns TRUE if the form is one of the indexed address forms (such as
+		/// <see cref="DW_FORM_addrx1"/>) and FALSE otherwise
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_addr_form_is_indexed(ushort form);
+
+		/// <summary>
+		/// Attributes with form <see cref="DW_FORM_addrx"/>, the operation <see cref="DW_OP_addrx"/>,
+		/// or certain of the split-dwarf location list entries give an index value to a machine
+		/// address in the .debug_addr section (which is always in .debug_addr even when the
+		/// form/operation are in a split dwarf .dwo section).
+		/// <br/>
+		/// Turns such an index into a target address value.
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="index">
+		/// Such an index
+		/// </param>
+		/// <param name="return_addr">
+		/// The target address
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// If there is no available .debug_addr section this may return <see cref="DW_DLV_NO_ENTRY"/>.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_debug_addr_index_to_addr(
+			IntPtr die,
+			ulong index,
+			out ulong return_addr,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Returns the global .debug_info offset and the CU-relative offset of <paramref name="die"/>
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="global_off">
+		/// The position of <paramref name="die"/> in the section containing debugging information
+		/// entries (the <paramref name="global_off"/> is a section-relative offset).
+		/// <br/>
+		/// In other words, the offset of the start of the debugging information entry described
+		/// by <paramref name="die"/> in the section containing dies i.e .debug_info.
+		/// </param>
+		/// <param name="cu_off">
+		/// The offset of the DIE represented by <paramref name="die"/> from the start of
+		/// the compilation-unit that it belongs to rather than the start of .debug_info
+		/// (the <paramref name="cu_off"/> is a CU-relative offset).
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_die_offsets(
+			IntPtr die,
+			out ulong global_off,
+			out ulong cu_off,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// similar to <see cref="dwarf_die_offsets"/>, except that it puts the global offset
+		/// of the CU DIE owning <paramref name="given_die"/> of .debug_info
+		/// (the <paramref name="return_offset"/> is a global section offset).
+		/// 
+		/// This is useful when processing a DIE tree and encountering an error or other surprise in a
+		/// DIE, as the <paramref name="return_offset"/> can be passed to <see cref="dwarf_offdie_b"/>
+		/// to return a pointer to the CU die of the CU owning the <paramref name="given_die"/>
+		/// passed to <see cref="dwarf_CU_dieoffset_given_die"/>. 
+		/// The consumer can extract information from the CU die and the given_die (in the normal way)
+		/// and print it.
+		/// </summary>
+		/// <param name="given_die"></param>
+		/// <param name="return_offset"></param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_CU_dieoffset_given_die(
+			IntPtr given_die,
+			out ulong return_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Returns the offset of the beginning of the CU and the length of the CU.
+		/// The offset and length are of the entire CU that this DIE is a part of.
+		/// It is used by dwarfdump (for example) to check the validity of offsets.
+		/// Most applications will have no reason to call this function
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="cu_global_offset"></param>
+		/// <param name="cu_length"></param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_die_CU_offset_range(
+			IntPtr die,
+			out ulong cu_global_offset,
+			out ulong cu_length,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_name">
+		/// the name attribute (<see cref="DW_AT_name"/>) of <paramref name="die"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not have a name attribute.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_diename(
+			IntPtr die,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string return_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="attrnum"></param>
+		/// <param name="return_name">
+		/// A string-value attribute of die if an attribute attrnum is present
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not have the attribute
+		/// <paramref name="attrnum"/>.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_die_text(
+			IntPtr die,
+			ushort attrnum,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string return_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <returns>
+		/// The abbreviation code of <paramref name="die"/>.
+		/// That is, it returns the abbreviation "index" into the abbreviation table
+		/// for the compilation unit of which <paramref name="die"/> is a part. It cannot fail.
+		/// No errors are possible.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_die_abbrev_code(IntPtr die);
+
+		/// <summary>
+		/// In case of error, the only errors possible involve an inappropriate NULL
+		/// <paramref name="die"/> pointer so no Dwarf_Debug pointer is available.
+		/// Therefore setting a Dwarf_Error would not be very meaningful
+		/// (there is no Dwarf_Debug to attach it to).
+		/// <br/>
+		/// The values returned through the pointers are the values two arguments
+		/// to <see cref="dwarf_get_form_class"/> requires
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="version">the CU context version</param>
+		/// <param name="offset_size">the CU context offset-size</param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_version_of_die(
+			IntPtr die,
+			out ushort version,
+			out ushort offset_size
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="attrbuf">
+		/// An array of Dwarf_Attribute descriptors corresponding to each
+		/// of the attributes in <paramref name="die"/>
+		/// <br/>
+		/// (!) actual type: out IntPtr[]/ Dwarf_attribute[<paramref name="attrcount"/>]* / void*[]*
+		/// </param>
+		/// <param name="attrcount">
+		/// The number of elements in the <paramref name="attrbuf"/> array
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramreg name="attrcount"/> is zero.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_attrlist(
+			IntPtr die,
+			// TODO: write marshaller for this
+			out IntPtr attrbuf,
+			out long attrcount,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="attr"></param>
+		/// <param name="return_bool">
+		/// non-zero if <paramref name="die"/> has the attribute
+		/// <paramref name="attr"/> and zero otherwise
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_hasattr(
+			IntPtr die,
+			ushort attr,
+			out int return_bool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="attr"></param>
+		/// <param name="return_attr">
+		/// the Dwarf_Attribute descriptor of <paramref name="die"/>
+		/// having the attribute <paramref name="attr"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="attr"/>
+		/// is not contained in <paramref name="die"/>
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_attr(
+			IntPtr die,
+			ushort attr,
+			out IntPtr return_attr,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_lowpc">
+		/// The low program counter value associated with the <paramref name="die"/> descriptor
+		/// </param>
+		/// <param name="error">
+		/// </param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> if <paramref name="die"/> represents a debugging information
+		/// entry with the <see cref="DW_AT_low_pc"/> attribute
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_lowpc(
+			IntPtr die,
+			out ulong return_lowpc,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// If the form class returned is <see cref="Dwarf_Form_Class.DW_FORM_CLASS_ADDRESS"/>
+		/// the <paramref name="return_highpc"/> is an actual pc address
+		/// (1 higher than the address of the last pc in the address range).
+		/// <br/>
+		/// If the form class returned is <see cref="Dwarf_Form_Class.DW_FORM_CLASS_CONSTANT"/>
+		/// the <paramref name="return_highpc"/> is an offset from the value of the the DIE’s
+		/// low PC address (see DWARF4 section 2.17.2 Contiguous Address Range).
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_highpc">
+		/// the value of the <see cref="DW_AT_high_pc"/> attribute of <paramref name="die"/>
+		/// </param>
+		/// <param name="return_form">
+		/// The FORM of the attribute
+		/// </param>
+		/// <param name="return_class">
+		/// the form class of the attribute
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if die does not have the <see cref="DW_AT_high_pc"/> attribute.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_highpc_b(
+			IntPtr die,
+			out ulong return_highpc,
+			out ushort return_form,
+			out Dwarf_Form_Class return_class,
+			out IntPtr error
+		);
+
+#endregion
 	}
 }
