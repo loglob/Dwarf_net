@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using static Dwarf_net.Defines;
 
 namespace Dwarf_net
 {
@@ -28,10 +29,10 @@ namespace Dwarf_net
 				IntPtr.Zero, 0, IntPtr.Zero,
 				out IntPtr err))
 			{
-				case Wrapper.DW_DLV_ERROR:
+				case DW_DLV_ERROR:
 					throw new DwarfException(err);
 
-				case Wrapper.DW_DLV_NO_ENTRY:
+				case DW_DLV_NO_ENTRY:
 					if(File.Exists(path))
 						throw new DwarfException("Unknown DLV_NO_ENTRY error");
 					else
@@ -50,17 +51,17 @@ namespace Dwarf_net
 		{
 			switch(Wrapper.dwarf_init_b(fd, 0, 0, null, IntPtr.Zero, out this.handle, out IntPtr err))
 			{
-				case Wrapper.DW_DLV_ERROR:
+				case DW_DLV_ERROR:
 					throw new DwarfException(err);
 
-				case Wrapper.DW_DLV_NO_ENTRY:
+				case DW_DLV_NO_ENTRY:
 					throw new DwarfException("No debug sections found");
 			}
 		}
 
 		public void Dispose()
 		{
-			if(Wrapper.dwarf_finish(handle, out IntPtr err) != Wrapper.DW_DLV_OK)
+			if(Wrapper.dwarf_finish(handle, out IntPtr err) != DW_DLV_OK)
 				throw new DwarfException(err);
 		}
 	}
