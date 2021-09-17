@@ -2418,7 +2418,140 @@ namespace Dwarf_net
 		[DllImport(lib)]
 		public static extern void dwarf_loc_head_c_dealloc(IntPtr loclist_head);
 
-	#endregion //Location List Operations .debug_loc & .debug_loclists (6.10)
+		#endregion //Location List Operations .debug_loc & .debug_loclists (6.10)
+
+	#region Line Number Operations (6.11)
+	/* Omitted functions:
+		* dwarf_srclines_dealloc_b: in favor of automatic garbage collecting
+	*/
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="die">
+		/// A pointer to a compilation-unit (CU) DIE.
+		/// </param>
+		/// <param name="version_out">
+		/// The version number from the line table header for this CU.
+		/// The experimental two-level line table value is 0xf006.
+		/// Standard numbers are 2,3,4 and 5.
+		/// </param>
+		/// <param name="is_single_table">
+		/// non-zero if the line table is an ordinary single line table.
+		/// If the line table is anything else (either a line table header with
+		/// no lines or an experimental two-level line table) it is set to zero.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if there is no line table.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_b(
+			IntPtr die,
+			out ulong version_out,
+			out int is_single_table,
+			out IntPtr context_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Retrieves the object file section name of the applicable line section.
+		/// This is useful for applications wanting to print the name,
+		/// but of course the object section name is not really a part of the DWARF
+		/// information. Most applications will probably not call this function.
+		/// It can be called at any time after the Dwarf_Debug initialization is done.
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="sec_name">
+		/// A string with the object section name
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if the section does not exist.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_line_section_name_from_die(
+			IntPtr die,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string sec_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Gives access to the line tables.
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="linebuf">
+		/// An array of Dwarf_Line pointers.
+		/// <br/>
+		/// Actual type: out Dwarf_Line[] / Dwarf_Line**
+		/// </param>
+		/// <param name="linecount">
+		/// The number of pointers in the array
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_from_linecontext(
+			IntPtr line_context,
+			out IntPtr linebuf,
+			out long linecount,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Gives access to the line tables.
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="linebuf">
+		/// An array of Dwarf_Line pointers.
+		/// <br/>
+		/// If a line table is actually a two-level table <paramref name="linebuf"/>
+		/// is set to point to an array of Logicals lines.
+		/// <br/>
+		/// Actual type: out Dwarf_Line[] / Dwarf_Line**
+		/// </param>
+		/// <param name="linecount">
+		/// the number of pointers in the <paramref name="linebuf"/> array
+		/// </param>
+		/// <param name="linebuf_actuals">
+		/// If a line table is actually a two-level table <paramref name="linebuf_actuals"/>
+		/// is set to point to an array of Actuals lines.
+		/// <br/>
+		/// Actual type: out Dwarf_Line[] / Dwarf_Line**
+		/// </param>
+		/// <param name="linecount_actuals">
+		/// the number of pointers in the <paramref name="linebuf_actuals"/> array
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_two_levelfrom_linecontext(
+			IntPtr line_context,
+			out IntPtr linebuf,
+			out long linecount,
+			out IntPtr linebuf_actuals,
+			out long linecount_actuals,
+			out IntPtr error
+		);
+
+	#endregion //Line Number Operations (6.11)
 
 #endregion
 	}
