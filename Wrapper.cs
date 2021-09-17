@@ -2088,7 +2088,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="dbg"></param>
 		/// <param name="context_index">
@@ -2183,7 +2183,242 @@ namespace Dwarf_net
 			out IntPtr error
 		);
 
-	#endregion //Location List Operations, Raw .debug_loclists (6.9)
+		#endregion //Location List Operations, Raw .debug_loclists (6.9)
+
+	#region Location List Operations .debug_loc & .debug_loclists (6.10)
+	/* Omitted functions:
+		* dwarf_get_locdesc_entry_c()
+		* dwarf_loclist_from_expr_c()
+		* dwarf_loclist()
+		* dwarf_loclist_n()
+		* dwarf_loclist_from_expr()
+		* dwarf_loclist_from_expr_b()
+		* dwarf_loclist_from_expr_a()
+	*/
+
+		/// <summary>
+		/// This function returns a pointer that is, in turn, used to make possible calls to return the
+		/// details of the location list
+		/// <br/>
+		/// At this point one cannot yet tell if it was a location list
+		/// or a location expression (see <see cref="dwarf_get_locdesc_entry_c"/>).
+		/// </summary>
+		/// <param name="attr">
+		/// Should have one of the FORMs of a location expression or location list.
+		/// </param>
+		/// <param name="loclist_head">
+		/// A pointer used in further calls
+		/// </param>
+		/// <param name="locCount">
+		/// The number of entries in the location list,
+		/// or one if the FORM is of a location expression
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// A return of <see cref="DW_DLV_NO_ENTRY"/> may be possible but is a bit odd.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_loclist_c(
+			IntPtr attr,
+			out IntPtr loclist_head,
+			out ulong locCount,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Returns overall information about a location list or location description.
+		/// Details about location operators are retrieved by a call to
+		/// <see cref="dwarf_get_location_op_value_d"/>.
+		/// <br/>
+		/// If <paramref name="loclist_kind"/> is <see cref="DW_LKIND_expression"/>,
+		/// that means the ’list’ is really just a location expression.
+		/// The only entry is with index zero.
+		/// In this case <paramref name="lle_value_out"/> will have the value
+		/// <see cref="DW_LLE_start_end"/>.
+		/// <br/>
+		/// If <paramref name="loclist_kind"/> is <see cref="DW_LKIND_loclist"/>,
+		/// that means the list is from DWARF2, DWARF3, or DWARF4.
+		/// The <paramref name="lle_value_out"/> value has been synthesized as if it were a
+		/// DWARF5 expression.
+		/// <br/>
+		/// If <paramref name="loclist_kind"/> is <see cref="DW_LKIND_GNU_exp_list"/>,
+		/// that means the list is from a DWARF4 .debug_loc.dwo object section.
+		/// It is an experimental version from before DWARF5 was published.
+		/// The <paramref name="lle_value_out"/> is <see cref="DW_LLEX_start_end_entry"/>
+		/// (or one of the other DW_LLEX values).
+		/// <br/>
+		/// If <paramref name="loclist_kind"/> is <see cref="DW_LKIND_loclists"/>,
+		/// that means this is a DWARF5 loclist, so <see cref="DW_LLE_start_end"/> is
+		/// an example of one possible <paramref name="lle_value_out"/> values. In addition,
+		/// if <paramref name="debug_addr_unavailable"/> is set it means the
+		/// <paramref name="lopc_out"/> and <paramref name="hipc_out"/>
+		/// could not be correctly set (so are meaningless) because the .debug_addr section is
+		/// missing. Very likely the .debug_addr section is in the executable and that file needs to be
+		/// opened and attached to the current Dwarf_Debug with <see cref="dwarf_set_tied_dbg"/>.
+		/// </summary>
+		/// <param name="loclist_head">
+		/// </param>
+		/// <param name="index"></param>
+		/// <param name="lle_value_out">
+		/// Set as described above
+		/// </param>
+		/// <param name="rawval1_out">
+		/// The value of the first operand in the location list entry. Uninterpreted.
+		/// Useful for reporting or for those wishing to do their own calculation of lopc.
+		/// </param>
+		/// <param name="rawval2_out">
+		/// The value of the second operand in the location list entry. Uninterpreted.
+		/// Useful for reporting or for those wishing to do their own calculation of hipc.
+		/// </param>
+		/// <param name="debug_addr_unavailable"></param>
+		/// <param name="lopc_out"></param>
+		/// <param name="hipc_out"></param>
+		/// <param name="loc_expr_op_count_out">
+		/// the number of operators in the location expression involved (which may be zero).
+		/// </param>
+		/// <param name="locentry_out">
+		/// an identifier used in calls to <see cref="dwarf_get_location_op_value_d"/>
+		/// </param>
+		/// <param name="loclist_kind">
+		/// One of <see cref="DW_LKIND_expression"/>, <see cref="DW_LKIND_loclist"/>,
+		/// <see cref="DW_LKIND_GNU_exp_list"/>, or <see cref="DW_LKIND_loclists"/>.
+		/// </param>
+		/// <param name="expression_offset_out">
+		/// The offset (in the .debug_loc(.dso) or .debug_info(.dwo) of the location expression
+		/// itself (possibly useful for debugging).
+		/// </param>
+		/// <param name="locdesc_offset_out">
+		/// The offset (in the section involved (see loclist_kind) of the location list entry itself
+		/// (possibly useful for debugging).
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// A return of <see cref="DW_DLV_NO_ENTRY"/> may be possible but is a bit odd.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_locdesc_entry_d(
+			IntPtr loclist_head,
+			ulong index,
+			out byte lle_value_out,
+			out ulong rawval1_out,
+			out ulong rawval2_out,
+			out int debug_addr_unavailable,
+			out ulong lopc_out,
+			out ulong hipc_out,
+			out ulong loc_expr_op_count_out,
+			out IntPtr locentry_out,
+			out byte loclist_kind,
+			out ulong expression_offset_out,
+			out ulong locdesc_offset_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		///
+		/// </summary>
+		/// <param name="head"></param>
+		/// <param name="kind">
+		/// The DW_LKIND* value for this <paramref name="head"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Though one should test the return code,
+		/// at present this always returns <see cref="DW_DLV_OK"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_loclist_head_kind(
+			IntPtr head,
+			out uint kind,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Returns the information for the single operator number <paramref name="index"/>
+		/// from the location expression <paramref name="locdesc"/>.
+		/// <br/>
+		/// <paramref name="operand1"/>, <paramref name="operand2"/>, and <paramref name="operand3"/>
+		/// are set to the operator operands as applicable (see DWARF documents on the operands
+		/// for each operator). All additions of base fields, if any, have been done already.
+		/// <paramref name="operand3"/> is new as of DWARF5.
+		/// <br/>
+		/// In some cases <paramref name="operand3"/> is actually a pointer into section data in memory
+		/// and <paramref name="operand2"/> has the length of the data at <paramref name="operand3"/>.
+		/// Callers must extract the bytes and deal with endianness issues of the extracted value.
+		/// <br/>
+		/// <paramref name="rawop1"/> , <paramref name="rawop2"/>, and <paramref name="rawop3"/>
+		/// are set to the operator operands as applicable (see DWARF documents on the operands
+		/// for each operator) before any base values were added in.
+		/// As for the previous, sometimes dealing with <paramref name="rawop3"/> means
+		/// interpreting it as a pointer and doing a dereference.
+		/// <br/>
+		/// More on the pointer values in Dwarf_Unsigned:
+		/// When a DWARF operand is not of a size fixed by dwarf or whose type is unknown,
+		/// or is possibly too large for a dwarf stack entry, libdwarf will insert a pointer
+		/// (to memory in the dwarf data somewhere) as the operand value.
+		/// <see cref="DW_OP_implicit_value"/> operand 2, <see cref="DW_OP_GNU_entry_value"/>
+		/// operand 2, and <see cref="DW_OP_const_type"> operand 3 are instances of this.
+		/// The problem with the values is that libdwarf is unclear what the type of the value
+		/// is so we pass the problem to you, the callers1!
+		/// </summary>
+		/// <param name="locdesc">A location expression</param>
+		/// <param name="index">A single operator number</param>
+		/// <param name="atom_out">
+		/// The applicable operator code, for example <see cref="DW_OP_reg5"/>
+		/// </param>
+		/// <param name="operand1"></param>
+		/// <param name="operand2"></param>
+		/// <param name="operand3">
+		/// </param>
+		/// <param name="rawop1"></param>
+		/// <param name="rawop2"></param>
+		/// <param name="rawop3"></param>
+		/// <param name="offset_for_branch">
+		/// The offset (in bytes) in this expression of this operator.
+		/// The value makes it possible for callers to implement the operator branch operators.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> is probably not a possible, but please test for it anyway
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_location_op_value_d(
+			IntPtr locdesc,
+			ulong index,
+			out byte atom_out,
+			out ulong operand1,
+			out ulong operand2,
+			out ulong operand3,
+			out ulong rawop1,
+			out ulong rawop2,
+			out ulong rawop3,
+			out ulong offset_for_branch,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// This function takes care of all the details so one does not have to _dwarf_dealloc() the
+		/// pieces individually, though code that continues to do the pieces individually still works.
+		/// This function frees all the memory associated with the <paramref name="loclist_head"/>.
+		/// It’s good practice to set <paramref name="loclist_head"/> to <see cref="IntPtr.Zero"/>
+		/// immediately after the call, as the pointer is stale at that point.
+		/// </summary>
+		/// <param name="loclist_head"></param>
+		[DllImport(lib)]
+		public static extern void dwarf_loc_head_c_dealloc(IntPtr loclist_head);
+
+	#endregion //Location List Operations .debug_loc & .debug_loclists (6.10)
 
 #endregion
 	}
