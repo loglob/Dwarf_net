@@ -2749,8 +2749,71 @@ namespace Dwarf_net
 			out string name,
 			out IntPtr error
 		);
-		static int __;
 	#endregion
+
+	// omitted section Get A Set of Lines (DWARF2,3,4 style) (6.13)
+
+	#region Get the set of Source File Names (6.14)
+
+		/// <summary>
+		/// This works for for all line tables. However indexing is different in DWARF5 than in
+		/// other versions of dwarf. To understand the DWARF5 version look at the following which
+		/// explains a contradiction in the DWARF5 document and how libdwarf (and at least some
+		/// compilers) resolve it. Join the next two strings together with no spaces to recreate
+		/// the web reference.
+		/// <br/>
+		/// If the applicable file name in the line table Statement Program Prolog does not start
+		/// with a ’/’ character the string in <see cref="DW_AT_comp_dir"/> (if applicable and present)
+		/// and the applicable directory name from the line Statement Program Prolog is prepended to
+		/// the file name in the line table Statement Program Prolog to make a full path.
+		/// <br/>
+		/// For all versions of dwarf this function and <see cref="dwarf_linesrc"/> prepend the value
+		/// of <see cref="DW_AT_comp_dir"/> to the name created from the line table header file names
+		/// and directory names if the line table header name(s) are not full paths.
+		/// <br/>
+		/// DWARF5:
+		/// <see cref="DW_MACRO_start_file"/>, <see cref="DW_LNS_set_file"/>,
+		/// <see cref="DW_AT_decl_file"/>, <see cref="DW_AT_call_file"/>, and the line table state
+		/// machine file numbers begin at zero. To index <paramref name="srcfiles"/> use the values
+		/// directly with no subtraction.
+		/// <br/>
+		/// DWARF2-4 and experimental line table:
+		/// <see cref="DW_MACINFO_start_file"/>, <see cref="DW_LNS_set_file"/>,
+		/// <see cref="DW_AT_decl_file"/>, and line table state machine file numbers begin at one.
+		/// In all these the value of 0 means there is no source file or source file name.
+		/// To index the <paramref name="srcfiles"/> array subtract one from the
+		/// <see cref="DW_AT_decl_file"/> (etc) file number.
+		/// </summary>
+		/// <param name="die">
+		/// should have the tag <see cref="DW_TAG_compile_unit"/>, <see cref="DW_TAG_partial_unit"/>,
+		/// or <see cref="DW_TAG_type_unit"/>
+		/// </param>
+		/// <param name="srcfiles">
+		/// Set to point to a list of pointers to null-terminated strings that name the source files.
+		/// Source files defined in the statement program are ignored.
+		/// </param>
+		/// <param name="srccount">
+		/// The number of source files named in the statement program prologue indicated
+		/// by the given <paramref name="die"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if there is no corresponding statement program
+		/// (i.e., if there is no line information).
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srcfiles(
+			IntPtr die,
+			out IntPtr srcfiles,
+			out long srccount,
+			out IntPtr error
+		);
+
+	#endregion //Get the set of Source File Names (6.14)
 
 #endregion
 	}
