@@ -51,19 +51,16 @@ namespace Dwarf_net
 		private const string lib = "libdwarf.so";
 
 #region Functions
-/* Omitted functions:
-	* dwarf_init_path_dl() because I don't currently plan to have debuglink support (yet)
-	* dwarf_set_de_alloc_flag(): we never want manual deallocation
-	* dwarf_object_init_b(): out-of-scope
-	* dwarf_get_elf(): only useful in unsupported context
-	* dwarf_object_detector_fd(), dwarf_object_detector_path(): out of scope
-	* dwarf_print*(): not needed
-	* dwarf_dieoffset() and dwarf_die_cu_offset(): redundant
-	* dwarf_ptr_CU_offset(): nonexistant? also references nonexistant type? TODO: look into that
-	* dwarf_die_abbrev_children_flag(): "it is not generally needed"
-	* dwarf_die_abbrev_global_offset(): "not normally needed by applications"
-	* various obsolete functions present only as _b or other updated replacements
-*/
+
+	#region Initialization Operations (6.1)
+	/* Omitted functions:
+		* dwarf_init_path_dl(): I don't currently plan to have debuglink support (yet)
+		* dwarf_init(): deprecated
+		* dwarf_set_de_alloc_flag(): we never want manual deallocation
+		* dwarf_elf_init(), dwarf_elf_init_b(): deprecated
+		* dwarf_get_elf(): only useful in deprecated context
+		* dwarf_object_init(), dwarf_object_init_b(): out-of-scope
+	*/
 
 		/// <summary>
 		///
@@ -395,8 +392,13 @@ namespace Dwarf_net
 		/// A pointer to a static string in standard ISO date format (i.e. "20180718")
 		/// </returns>
 		[DllImport(lib)]
-		public static extern int dwarf_package_version();
+		[return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+		public static extern string dwarf_package_version();
+	#endregion //Initialization Operations (6.1)
 
+	// Omitted section Object Type Detectors (6.2): out of scope 
+
+	#region Group Operations (6.3)
 		/// <summary>
 		/// Once the Dwarf_Debug is open the group information is set and it will not
 		/// change for the life of this Dwarf_Debug.
@@ -490,6 +492,13 @@ namespace Dwarf_net
 			IntPtr[] sec_names_array,
 			out IntPtr error
 		);
+	#endregion //Section Group Operations (6.3)
+
+	#region Size Operations (6.4)
+	/* Omitted functions:
+		* dwarf_get_section_max_offsets(): deprecated
+	
+	*/
 
 		/// <summary>
 		/// Reports on the section sizes
@@ -524,6 +533,16 @@ namespace Dwarf_net
 			out ulong debug_pubtypes_size,
 			out ulong debug_types_size
 		);
+	#endregion //Size Operations (6.4)
+
+	// Omitted section Printf Callbacks (6.5): not needed
+
+	#region Debugging Information Entry Delivery Operations (6.6)
+	/* Omitted functions:
+		* dwarf_next_cu_header_c(), dwarf_next_cu_header_b() and dwarf_next_cu_header(): deprecated
+		* dwarf_siblingof(): deprecated
+		* dwarf_offdie(): deprecated	
+	*/
 
 		/// <summary>
 		/// Lets consumers access the object section name when no specific DIE is at hand.
@@ -559,6 +578,39 @@ namespace Dwarf_net
 		public static extern int dwarf_get_die_section_name(
 			IntPtr dbg,
 			int is_info,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string sec_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Lets consumers access the object section name when one has a DIE.
+		/// This is useful for applications wanting to print the name, but of course the object
+		/// section name is not really a part of the DWA RF information.
+		/// Most applications will probably not call this function.
+		/// It can be called at any time after the Dwarf_Debug initialization is done.
+		/// <br/>
+		/// See also <see cref="dwarf_get_die_section_name"/>.
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="sec_name">
+		/// A string with the object section name.
+		/// For n on-Elf objects it is possible the string pointer returned will be NULL or 
+		/// will point to an empty string. It is up to the calling application to recognize this 
+		/// possibility and deal with it appropriately.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_OK"/> and sets <paramref name="sec_name"/> on success.
+		/// <br/>
+		/// If the section does not exist the function returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// <br/>
+		/// If there is an internal error detected the function returns <see cref="DW_DLV_ERROR"/>
+		/// and sets <paramref name="error"/>.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_die_section_name_b(
+			IntPtr die,
 			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
 			out string sec_name,
 			out IntPtr error
@@ -781,6 +833,16 @@ namespace Dwarf_net
 			out ulong offset
 		);
 
+	#endregion //Debugging Information Entry Delivery Operations (6.6)
+
+	#region Debugging Information ENtry Query Operations (6.7)
+	/* Omitted:
+		* dwarf_dieoffset() and dwarf_die_cu_offset(): redundant
+		* dwarf_ptr_CU_offset(): nonexistant? also references nonexistant type? TODO: look into that
+		* dwarf_die_abbrev_children_flag(): "it is not generally needed"
+		* dwarf_die_abbrev_global_offset(): "not normally needed by applications"
+	*/
+		
 		/// <summary>
 		/// 
 		/// </summary>
@@ -1372,7 +1434,8 @@ namespace Dwarf_net
 			out ulong return_order,
 			out IntPtr error
 		);
+	#endregion //Debugging Information ENtry Query Operations (6.7)
 
-		#endregion
+#endregion
 	}
 }
