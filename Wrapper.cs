@@ -850,6 +850,7 @@ namespace Dwarf_net
 		/// <br/>
 		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
+		[DllImport(lib)]
 		public static extern int dwarf_tag(
 			IntPtr die,
 			out ushort tagval,
@@ -1191,6 +1192,187 @@ namespace Dwarf_net
 			out IntPtr error
 		);
 
-#endregion
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_off">
+		/// the offset referred to by the <see cref="DW_AT_type"/> attribute of <paramref name="die"/>.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/>
+		/// has no <see cref="DW_AT_type"/> attribute.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_dietype_offset(
+			IntPtr die,
+			out ulong return_off,
+			out IntPtr error 
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="offset"></param>
+		/// <param name="is_info"></param>
+		/// <param name="offbuf">
+		/// An array of the offsets of the direct children of the die at <paramref name="offset"/>
+		/// <br/>
+		/// Actual type: out ulong[] / ulong[]*
+		/// </param>
+		/// <param name="offcnt">
+		/// The count of entries in the <paramref name="offset"/> array
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// <br/>
+		/// It does not return <see cref="DW_DLV_NO_ENTRY"/>
+		/// but callers should allow for that possibility anyway.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_offset_list(
+			IntPtr dbg,
+			ulong offset,
+			int is_info,
+			// TODO: write marshaller for this
+			out IntPtr offbuf,
+			out ulong offcnt,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_size">
+		/// The number of bytes needed to contain an instance of the aggregate
+		/// debugging information entry represented by <paramref name="die"/>. 
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not contain
+		/// the byte size attribute <see cref="DW_AT_byte_size"/>.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern long dwarf_bytesize(
+			IntPtr die,
+			out ulong return_size,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_size">
+		/// To the number of bits occupied by the bit field value
+		/// that is an attribute of <paramref name="die"/>.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not contain
+		/// the bit size attribute <see cref="DW_AT_bit_size"/>.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_bitsize(
+			IntPtr die,
+			out ulong return_size,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_size">
+		/// The number of bits to the left of the most significant bit of the bit field value.
+		/// This bit offset is not necessarily the net bit offset within the structure or class,
+		/// since <see cref="DW_AT_data_member_location"/> may give a byte offset to this DIE
+		/// and the bit offset returned through the pointer does not include the bits
+		/// in the byte offset.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not contain
+		/// the bit offset attribute <see cref="DW_AT_bit_offset"/>.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_bitoffset(
+			IntPtr die,
+			out ulong return_size,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_lang">
+		/// A code indicating the source language of the compilation unit
+		/// represented by the descriptor <paramreg name="die"/>.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not represent
+		/// a source file debugging information entry
+		/// (i.e. contain the attribute <see cref="DW_AT_language"/>).
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclang(
+			IntPtr die,
+			out ulong return_lang,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="die"></param>
+		/// <param name="return_order">
+		/// A code indicating the ordering of the array represented by
+		/// the descriptor <paramreg name="die"/>.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="die"/> does not
+		/// contain the array order attribute <see cref="DW_AT_ordering"/>.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_arrayorder(
+			IntPtr die,
+			out ulong return_order,
+			out IntPtr error
+		);
+
+		#endregion
 	}
 }
