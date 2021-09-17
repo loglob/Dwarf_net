@@ -418,7 +418,7 @@ namespace Dwarf_net
 		public static extern string dwarf_package_version();
 	#endregion //Initialization Operations (6.1)
 
-	// Omitted section Object Type Detectors (6.2): out of scope 
+	// Omitted section Object Type Detectors (6.2): out of scope
 
 	#region Group Operations (6.3)
 		/// <summary>
@@ -519,7 +519,7 @@ namespace Dwarf_net
 	#region Size Operations (6.4)
 	/* Omitted functions:
 		* dwarf_get_section_max_offsets(): deprecated
-	
+
 	*/
 
 		/// <summary>
@@ -563,7 +563,7 @@ namespace Dwarf_net
 	/* Omitted functions:
 		* dwarf_next_cu_header_c(), dwarf_next_cu_header_b() and dwarf_next_cu_header(): deprecated
 		* dwarf_siblingof(): deprecated
-		* dwarf_offdie(): deprecated	
+		* dwarf_offdie(): deprecated
 	*/
 
 		/// <summary>
@@ -617,8 +617,8 @@ namespace Dwarf_net
 		/// <param name="die"></param>
 		/// <param name="sec_name">
 		/// A string with the object section name.
-		/// For n on-Elf objects it is possible the string pointer returned will be NULL or 
-		/// will point to an empty string. It is up to the calling application to recognize this 
+		/// For n on-Elf objects it is possible the string pointer returned will be NULL or
+		/// will point to an empty string. It is up to the calling application to recognize this
 		/// possibility and deal with it appropriately.
 		/// </param>
 		/// <param name="error"></param>
@@ -641,7 +641,7 @@ namespace Dwarf_net
 		/// <summary>
 		/// The next call to <see cref="dwarf_next_cu_header_d"/> returns <see cref="DW_DLV_NO_ENTRY"/>
 		/// without reading a compilation-unit or setting *next_cu_header.
-		/// Subsequent calls to <see cref="dwarf_next_cu_header_d"/> repeat the cycle by reading 
+		/// Subsequent calls to <see cref="dwarf_next_cu_header_d"/> repeat the cycle by reading
 		/// the first compilation-unit and so on.
 		/// </summary>
 		/// <param name="dbg"></param>
@@ -701,7 +701,7 @@ namespace Dwarf_net
 		/// </param>
 		/// <param name="header_cu_type">
 		/// applicable to all CU headers.
-		/// Either <see cref="DW_UT_compile">, <see cref="DW_UT_partial"> or <see cref="DW_UT_type"> 
+		/// Either <see cref="DW_UT_compile">, <see cref="DW_UT_partial"> or <see cref="DW_UT_type">
 		/// and identifies the header type of this CU.
 		/// <br/>
 		/// In DWARF4 a <see cref="DW_UT_type"> will be in .debug_types,
@@ -739,7 +739,7 @@ namespace Dwarf_net
 		/// </param>
 		/// <param name="is_info">
 		/// If non-zero then the die is assumed to refer to a .debug_info DIE.
-		///<br/> 
+		///<br/>
 		/// If zero then the die is assumed to refer to a .debug_types DIE.
 		/// <br/>
 		/// If <paramname ref="die"/> is non-NULL it is still essential for the call
@@ -758,7 +758,7 @@ namespace Dwarf_net
 		/// If there is no sibling it returns <see cref="DW_DLV_NO_ENTRY"/>.
 		/// <br/>
 		/// When it succeeds, returns <see cref="DW_DLV_OK"/> and sets <paramref name="return_sib"/>
-		/// to the Dwarf_Die descriptor of the sibling of <paramref name="die"/>. 
+		/// to the Dwarf_Die descriptor of the sibling of <paramref name="die"/>.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_siblingof_b(
@@ -782,7 +782,7 @@ namespace Dwarf_net
 		/// If t here is no child it returns <see cref="DW_DLV_NO_ENTRY"/>.
 		/// <br/>
 		/// When it succeeds, it returns <see cref="DW_DLV_OK"/> and sets <paramref name="return_kid"/>
-		/// to the Dwarf_Die descriptor of the first child of <paramref name="die"/>. 
+		/// to the Dwarf_Die descriptor of the first child of <paramref name="die"/>.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_child(
@@ -864,9 +864,9 @@ namespace Dwarf_net
 		* dwarf_die_abbrev_children_flag(): "it is not generally needed"
 		* dwarf_die_abbrev_global_offset(): "not normally needed by applications"
 	*/
-		
+
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <returns>
@@ -882,7 +882,7 @@ namespace Dwarf_net
 		/// <br/>
 		/// Summing <paramref name="offset_size"/> and <paramref name="extension_size"/>
 		/// gives the length of the CU length field, which is immediately followed by the CU header.
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="version"></param>
@@ -922,7 +922,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="tagval">
@@ -1015,11 +1015,11 @@ namespace Dwarf_net
 		/// similar to <see cref="dwarf_die_offsets"/>, except that it puts the global offset
 		/// of the CU DIE owning <paramref name="given_die"/> of .debug_info
 		/// (the <paramref name="return_offset"/> is a global section offset).
-		/// 
+		///
 		/// This is useful when processing a DIE tree and encountering an error or other surprise in a
 		/// DIE, as the <paramref name="return_offset"/> can be passed to <see cref="dwarf_offdie_b"/>
 		/// to return a pointer to the CU die of the CU owning the <paramref name="given_die"/>
-		/// passed to <see cref="dwarf_CU_dieoffset_given_die"/>. 
+		/// passed to <see cref="dwarf_CU_dieoffset_given_die"/>.
 		/// The consumer can extract information from the CU die and the given_die (in the normal way)
 		/// and print it.
 		/// </summary>
@@ -1054,7 +1054,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_name">
@@ -1077,7 +1077,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="attrnum"></param>
@@ -1103,7 +1103,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <returns>
@@ -1140,7 +1140,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="attrbuf">
@@ -1170,7 +1170,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="attr"></param>
@@ -1193,7 +1193,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="attr"></param>
@@ -1219,7 +1219,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_lowpc">
@@ -1277,7 +1277,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_off">
@@ -1296,11 +1296,11 @@ namespace Dwarf_net
 		public static extern int dwarf_dietype_offset(
 			IntPtr die,
 			out ulong return_off,
-			out IntPtr error 
+			out IntPtr error
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="dbg"></param>
 		/// <param name="offset"></param>
@@ -1334,12 +1334,12 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_size">
 		/// The number of bytes needed to contain an instance of the aggregate
-		/// debugging information entry represented by <paramref name="die"/>. 
+		/// debugging information entry represented by <paramref name="die"/>.
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
@@ -1358,7 +1358,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_size">
@@ -1382,7 +1382,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_size">
@@ -1409,7 +1409,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_lang">
@@ -1434,7 +1434,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="die"></param>
 		/// <param name="return_order">
@@ -1461,7 +1461,7 @@ namespace Dwarf_net
 	#region Attribute Queries (6.8)
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr"></param>
 		/// <param name="form"></param>
@@ -1475,7 +1475,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_hasform(
@@ -1486,18 +1486,18 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr"></param>
 		/// <param name="return_form">
 		/// the attribute form code of the attribute represented
-		/// by the Dwarf_Attribute descriptor <paramref name="attr"/>. 
+		/// by the Dwarf_Attribute descriptor <paramref name="attr"/>.
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_whatform(
@@ -1523,13 +1523,13 @@ namespace Dwarf_net
 		/// <param name="attr"></param>
 		/// <param name="return_form">
 		/// the attribute form code of the attribute represented
-		/// by the Dwarf_Attribute descriptor <paramref name="attr"/>. 
+		/// by the Dwarf_Attribute descriptor <paramref name="attr"/>.
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_whatform_direct(
@@ -1539,7 +1539,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr"></param>
 		/// <param name="return_attr">
@@ -1549,7 +1549,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_whatattr(
@@ -1559,13 +1559,13 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr">
 		/// A CU-local reference, not form <see cref="DW_FORM_ref_addr"/>
 		/// and not <see cref="DW_FORM_sec_offset"/>.
 		/// <br/>
-		/// It is an error for the form to not belong to the REFERENCE class. 
+		/// It is an error for the form to not belong to the REFERENCE class.
 		/// </param>
 		/// <param name="return_offset">
 		/// The CU-relative offset represented by the descriptor attr if the
@@ -1575,7 +1575,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_formref(
@@ -1585,10 +1585,10 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr">
-		/// A CU-local reference (DWARF class REFERENCE) or form <see cref="DW_FORM_ref_addr"/> 
+		/// A CU-local reference (DWARF class REFERENCE) or form <see cref="DW_FORM_ref_addr"/>
 		/// and the must be directly relevant for the calculated <paramref name="return_offset"/>
 		/// to mean anything.
 		/// </param>
@@ -1600,7 +1600,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_convert_to_global_offset(
@@ -1621,7 +1621,7 @@ namespace Dwarf_net
 		/// <param name="attr">
 		/// Any legal REFERENCE class form plus <see cref="DW_FORM_ref_addr"/>
 		/// or <see cref="DW_FORM_sec_offset"/>. It is an error for the form to not
-		/// belong to one of the reference classes. 
+		/// belong to one of the reference classes.
 		/// </param>
 		/// <param name="return_offset">
 		/// The section-relative offset represented by the descriptor <paramref name="attr"/>
@@ -1630,7 +1630,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_global_formref(
@@ -1659,7 +1659,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// <see cref="DW_DLV_ERROR"/> on error.
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_formaddr(
@@ -1694,14 +1694,14 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr">
 		/// An attribute with the form flag.
 		/// </param>
 		/// <param name="return_bool">
 		/// the (one unsigned byte) flag value.
-		/// Any non-zero value means true. 
+		/// Any non-zero value means true.
 		/// A zero value means false.
 		/// </param>
 		/// <param name="error"></param>
@@ -1776,7 +1776,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr">
 		/// An attribute that belongs to the BLOCK class.
@@ -1802,7 +1802,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr">
 		/// An attribute that belongs to the STRING class.
@@ -1826,12 +1826,12 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="attr">
 		/// An attribute of form <see cref="DW_FORM_ref_sig8"/> (a member of the REFERENCE class).
 		/// <br/>
-		/// It is an error for the form to be anything but <see cref="DW_FORM_ref_sig8"/>. 
+		/// It is an error for the form to be anything but <see cref="DW_FORM_ref_sig8"/>.
 		/// </param>
 		/// <param name="return_sig8">
 		/// the 8 byte signature of <paramref name="attr"/>
@@ -1876,7 +1876,7 @@ namespace Dwarf_net
 
 		/// <summary>
 		/// The function is just for the convenience of libdwarf clients that might wish to categorize
-		/// the FORM of a particular attribute. The DWARF specification divides FORMs into 
+		/// the FORM of a particular attribute. The DWARF specification divides FORMs into
 		/// classes in Chapter 7 and this function figures out the correct class for a form.
 		/// <br/>
 		/// The function <see cref="dwarf_get_version_of_die"/> may be helpful in filling out
@@ -1958,7 +1958,7 @@ namespace Dwarf_net
 		/// If <paramref name="dsc_type"/> is <see cref="DW_DSC_range"/>,
 		/// <paramref name="dsc_low"/> is set to the low end of the discriminant range and
 		/// <paramref name="dsc_high"/> is set to the high end of the discriminant range.
-		/// <br/> 
+		/// <br/>
 		/// Due to the nature of the LEB numbers in the discriminant representation in DWARF
 		/// one must call the correct one of <see cref="dwarf_discr_entry_u"/> or
 		/// <see cref="dwarf_discr_entry_s"/>, based on whether the discriminant is signed or unsigned.

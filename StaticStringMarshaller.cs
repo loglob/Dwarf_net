@@ -5,9 +5,9 @@ using System.Runtime.InteropServices;
 
 class StaticStringMarshaler : ICustomMarshaler
 {
-    private static readonly StaticStringMarshaler instance = new StaticStringMarshaler();
+	private static readonly StaticStringMarshaler instance = new StaticStringMarshaler();
 
-    void ICustomMarshaler.CleanUpManagedData(object _)
+	void ICustomMarshaler.CleanUpManagedData(object _)
 	{ }
 
 	void ICustomMarshaler.CleanUpNativeData(IntPtr _)
@@ -19,12 +19,13 @@ class StaticStringMarshaler : ICustomMarshaler
 	}
 
 	IntPtr ICustomMarshaler.MarshalManagedToNative(object ManagedObj)
-		=> throw new NotSupportedException(nameof(StaticStringMarshaler) + " is only for returned parameters");
-    
+		=> throw new NotSupportedException(nameof(StaticStringMarshaler)
+			+ " is only for returned parameters");
+
 	object ICustomMarshaler.MarshalNativeToManaged(IntPtr pNativeData)
 		=> Marshal.PtrToStringAnsi(pNativeData);
 
-    public static ICustomMarshaler GetInstance(string _)
-        => instance;
+	public static ICustomMarshaler GetInstance(string _)
+		=> instance;
 
 }
