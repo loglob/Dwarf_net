@@ -47,6 +47,12 @@ namespace Dwarf_net
 			ulong bl_section_offset;
 		}
 
+		[StructLayout(LayoutKind.Sequential)]
+		public struct Form_Data16
+		{
+			ulong low, high;
+		}
+
 		/// <summary>
 		/// Pointer to error handler function.
 		/// This will only be called if an error is detected inside libdwarf and
@@ -2551,7 +2557,200 @@ namespace Dwarf_net
 			out IntPtr error
 		);
 
-	#endregion //Line Number Operations (6.11)
+		#endregion //Line Number Operations (6.11)
+
+	#region Line Context Details (DWARF5 style) (6.12)
+	/* Omitted functions:
+		* dwarf_srclines_files_count
+		* dwarf_srclines_files_data
+		* dwarf_srclines_subprog_count
+		* dwarf_srclines_subprog_data
+	*/
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="offset">
+		/// Returns the offset (in the object file line section) of the actual line data
+		/// (i.e. after the line header for this compilation unit)
+		/// <br/>
+		/// probably only of interest when printing detailed information about a line table header
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_table_offset(
+			IntPtr line_context,
+			out ulong offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="version">the line table version number</param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_version(
+			IntPtr line_context,
+			out ulong version,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="compilation_directory">
+		/// The compilation directory string for this line table.
+		/// May be NULL or the empty string.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_comp_dir(
+			IntPtr line_context,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string compilation_directory,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// With DWARF5 the base file number index in the line table changed from zero
+		/// (DWARF2,3,4) to one (DWA RF5). Which meant iterating through the valid source file
+		/// indexes became messy if one used the older dwarf_srclines_files_count()
+		/// function (zero-based and one-based indexing being incompatible).
+		/// See Figure "Examplec dwarf_srclines_b()" above for use of this
+		/// function in accessing file names.
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="baseindex">
+		/// The base index of files in the files list of a line table header
+		/// </param>
+		/// <param name="count">
+		/// The number of files in the files list of a line table header
+		/// </param>
+		/// <param name="endindex">
+		/// The end index of files in the files list of a line table header
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_files_indexes(
+			IntPtr line_context,
+			out long baseindex,
+			out long count,
+			out long endindex,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Retrieves data about a single file in the files list.
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="index">
+		/// Valid index values are 1 through count,
+		/// reflecting the way the table is defined by DWARF2,3,4.
+		/// For a dwarf5 line table index values 0...count-1 are legal.
+		/// This is certainly awkward.
+		/// </param>
+		/// <param name="name"></param>
+		/// <param name="directory_index">
+		/// The unsigned directory index represents an entry in the directories field of 
+		/// the header. The index is 0 if the file was found in the current directory of the 
+		/// compilation (hence, the first directory in the directories field), 1 if it was
+		/// found in the second directory in the directories field, and so on
+		/// </param>
+		/// <param name="last_mod_time"></param>
+		/// <param name="file_length"></param>
+		/// <param name="md5_value">
+		/// A pointer to a Dwarf_Form_Data16 md5 value if the md5 value is present.
+		/// <see cref="IntPtr.Zero"/> otherwise to indicate there was no such field. 
+		/// <br/>
+		/// Actual type: out Form_Data16* / Dwarf_Form_Data16** / unsigned long[2]**
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_files_data_b(
+			IntPtr line_context,
+			long index,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string name,
+			out ulong directory_index,
+			out ulong last_mod_time,
+			out ulong file_length,
+			out IntPtr md5_value,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="count">
+		/// The number of files in the includes list of a line table header
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_include_dir_count(
+			IntPtr line_context,
+			out long count,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Retrieves data about a single file in the include files list
+		/// </summary>
+		/// <param name="line_context"></param>
+		/// <param name="index">
+		/// 1 through count, reflecting the way the table is defined by DWARF
+		/// </param>
+		/// <param name="name"></param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_srclines_include_dir_data(
+			IntPtr line_context,
+			long index,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string name,
+			out IntPtr error
+		);
+		static int __;
+	#endregion
 
 #endregion
 	}
