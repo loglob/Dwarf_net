@@ -26,6 +26,28 @@ namespace Dwarf_net
 		};
 
 		/// <summary>
+		/// The Dwarf_Block type is used to contain the value of an attribute whose form is either
+		/// <see cref="DW_FORM_block1"/>, <see cref="DW_FORM_block2"/>, <see cref="DW_FORM_block4"/>,
+		/// <see cref="DW_FORM_block8"/>, or <see cref="DW_FORM_block"/>.
+		/// Its intended use is to deliver the value for an attribute of any of these forms.
+		/// </summary>
+		[StructLayout(LayoutKind.Sequential)]
+		public struct Block
+		{
+			/// <summary>
+			/// The length in bytes of the data pointed to by the <paramref name="bl_data"/> field.
+			/// </summary>
+			ulong bl_len;
+			/// <summary>
+			/// A pointer to the uninterpreted data.
+			/// The data pointed to is not necessarily at any useful alignment.
+			/// </summary>
+			IntPtr bl_data;
+			byte bl_from_loclist;
+			ulong bl_section_offset;
+		}
+
+		/// <summary>
 		/// Pointer to error handler function.
 		/// This will only be called if an error is detected inside libdwarf and
 		/// the Dwarf_Error argument passed to libdwarf is NULL.
@@ -835,7 +857,7 @@ namespace Dwarf_net
 
 	#endregion //Debugging Information Entry Delivery Operations (6.6)
 
-	#region Debugging Information ENtry Query Operations (6.7)
+	#region Debugging Information Entry Query Operations (6.7)
 	/* Omitted:
 		* dwarf_dieoffset() and dwarf_die_cu_offset(): redundant
 		* dwarf_ptr_CU_offset(): nonexistant? also references nonexistant type? TODO: look into that
@@ -1434,7 +1456,565 @@ namespace Dwarf_net
 			out ulong return_order,
 			out IntPtr error
 		);
-	#endregion //Debugging Information ENtry Query Operations (6.7)
+		#endregion //Debugging Information ENtry Query Operations (6.7)
+
+	#region Attribute Queries (6.8)
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr"></param>
+		/// <param name="form"></param>
+		/// <param name="return_hasform">
+		/// A non-zero value if the attribute represented by the Dwarf_Attribute descriptor
+		/// <paramref name="attr"/> has the attribute form <paramref name="form"/>.
+		/// <br/>
+		/// Zero if the attribute does not have that form.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_hasform(
+			IntPtr attr,
+			ushort form,
+			out int return_hasform,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr"></param>
+		/// <param name="return_form">
+		/// the attribute form code of the attribute represented
+		/// by the Dwarf_Attribute descriptor <paramref name="attr"/>. 
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_whatform(
+			IntPtr attr,
+			out ushort return_form,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// An attribute using DW_FORM_indirect effectively has two forms.
+		/// This returns the form ’directly’ in the initial form field.
+		/// That is, it returns the ’initial’ form of the attribute.
+		/// <br/>
+		/// So when the form field is <see cref="DW_FORM_indirect"/> this call
+		/// returns the <see cref="DW_FORM_indirect"/> form,
+		/// which is sometimes useful for dump utilities
+		/// <br/>
+		/// It is confusing that the _direct() function returns <see cref="DW_FORM_indirect"/>
+		/// if an indirect form is involved. Just think of this as returning the initial form
+		/// the first form value seen for the attribute, which is also the final form unless
+		/// the initial form is <see cref="DW_FORM_indirect"/>.
+		/// </summary>
+		/// <param name="attr"></param>
+		/// <param name="return_form">
+		/// the attribute form code of the attribute represented
+		/// by the Dwarf_Attribute descriptor <paramref name="attr"/>. 
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_whatform_direct(
+			IntPtr attr,
+			out ushort return_form,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr"></param>
+		/// <param name="return_attr">
+		/// The attribute code represented by the Dwarf_Attribute descriptor <paramref name="attr"/>.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_whatattr(
+			IntPtr attr,
+			out ushort return_attr,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr">
+		/// A CU-local reference, not form <see cref="DW_FORM_ref_addr"/>
+		/// and not <see cref="DW_FORM_sec_offset"/>.
+		/// <br/>
+		/// It is an error for the form to not belong to the REFERENCE class. 
+		/// </param>
+		/// <param name="return_offset">
+		/// The CU-relative offset represented by the descriptor attr if the
+		/// form of the attribute belongs to the REFERENCE class.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formref(
+			IntPtr attr,
+			out ulong return_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr">
+		/// A CU-local reference (DWARF class REFERENCE) or form <see cref="DW_FORM_ref_addr"/> 
+		/// and the must be directly relevant for the calculated <paramref name="return_offset"/>
+		/// to mean anything.
+		/// </param>
+		/// <param name="offset"></param>
+		/// <param name="return_offset">
+		/// The section-relative offset represented by the cu-relative offset <paramref name="offset"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_convert_to_global_offset(
+			IntPtr attr,
+			ulong offset,
+			out ulong return_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The caller must determine which section the offset returned applies to.
+		/// The function <see cref="dwarf_get_form_class"/> is useful to determine
+		/// the applicable section.
+		/// <br/>
+		/// Converts CU relative offsets from forms such as <see cref="DW_FORM_ref4"/>
+		/// into global section offsets.
+		/// </summary>
+		/// <param name="attr">
+		/// Any legal REFERENCE class form plus <see cref="DW_FORM_ref_addr"/>
+		/// or <see cref="DW_FORM_sec_offset"/>. It is an error for the form to not
+		/// belong to one of the reference classes. 
+		/// </param>
+		/// <param name="return_offset">
+		/// The section-relative offset represented by the descriptor <paramref name="attr"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_global_formref(
+			IntPtr attr,
+			out ulong return_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// One possible error that can arise (in a .dwo object file or a .dwp package file)
+		/// is <see cref="DW_DLE_MISSING_NEEDED_DEBUG_ADDR_SECTION"/>.
+		/// Such an error means that the .dwo or .dwp file is missing the .debug_addr section.
+		/// When opening a .dwo object file or a .dwp package file one should also open the
+		/// corresponding executable and use <see cref="dwarf_set_tied_dbg"/> to associate
+		/// the objects before calling <see cref="dwarf_formaddr"/>.
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute that belongs to the ADDRESS class.
+		/// It is an error for the form to not belong to this class.
+		/// It returns <see cref="DW_DLV_ERROR"/> on error.
+		/// </param>
+		/// <param name="return_addr">
+		/// The address represented by the descriptor <paramref name="attr"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error. 
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formaddr(
+			IntPtr attr,
+			out ulong return_addr,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// For an a ttribute with form <see cref="DW_FORM_strx"/> or
+		/// <see cref="DW_FORM_GNU_str_index"/> retrieves the index
+		/// (which refers to a .debug_str_offsets section in this .dwo).
+		/// <br/>
+		/// It is an error if the attribute does not have this form
+		/// or there is no valid compilation unit context.
+		/// </summary>
+		/// <param name="attr"></param>
+		/// <param name="return_index">The index</param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> is not returned.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_debug_str_index(
+			IntPtr attr,
+			out ulong return_index,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute with the form flag.
+		/// </param>
+		/// <param name="return_bool">
+		/// the (one unsigned byte) flag value.
+		/// Any non-zero value means true. 
+		/// A zero value means false.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formflag(
+			IntPtr attr,
+			out int return_bool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// For DWARF2 and DWARF3, <see cref="DW_FORM_data4"/> and <see cref="DW_FORM_data8"/>
+		/// are possibly class CONSTANT, and for DWARF4 and later they are definitely class CONSTANT.
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute that belongs to the CONSTANT class.
+		/// It is an error for the form to not belong to this class.
+		/// </param>
+		/// <param name="return_uvalue">
+		/// The Dwarf_Unsigned value of the attribute represented
+		/// by the descriptor <paramref name="attr"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// Never returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formudata(
+			IntPtr attr,
+			out ulong return_uvalue,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// For DWARF2 and DWARF3, <see cref="DW_FORM_data4"/> and <see cref="DW_FORM_data8"/>
+		/// are possibly class CONSTANT, and for DWARF4 and later they are definitely class CONSTANT.
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute that belongs to the CONSTANT class.
+		/// It is an error for the form to not belong to this class.
+		/// </param>
+		/// <param name="return_svalue">
+		/// The Dwarf_Signed value of the attribute represented
+		/// by the descriptor <paramref name="attr"/>
+		/// <br/>
+		/// If the size of the data attribute referenced is smaller than the size of the
+		/// Dwarf_Signed type, its value is sign extended.
+		/// It returns <see cref="DW_DLV_ERROR"/> on error.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// <br/>
+		/// Never returns <see cref="DW_DLV_NO_ENTRY"/>.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formsdata(
+			IntPtr attr,
+			out long return_svalue,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute that belongs to the BLOCK class.
+		/// It is an error for the form to not belong to this class.
+		/// </param>
+		/// <param name="return_block">
+		/// A pointer to a Dwarf_Block structure containing the value of the attribute
+		/// represented by the descriptor <paramref name="attr"/>.
+		/// <br/>
+		/// Use <see cref="Marshal.PtrToStructure"/> with type <see cref="Block"/> to dereference.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formblock(
+			IntPtr attr,
+			out IntPtr return_block,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute that belongs to the STRING class.
+		/// It is an error for the form to not belong to this class.
+		/// </param>
+		/// <param name="return_string">
+		/// The value of the attribute represented by the descriptor <paramref name="attr"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formstring(
+			IntPtr attr,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string return_string,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute of form <see cref="DW_FORM_ref_sig8"/> (a member of the REFERENCE class).
+		/// <br/>
+		/// It is an error for the form to be anything but <see cref="DW_FORM_ref_sig8"/>. 
+		/// </param>
+		/// <param name="return_sig8">
+		/// the 8 byte signature of <paramref name="attr"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formsig8(
+			IntPtr attr,
+			out ulong return_sig8,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute of form <see cref="DW_FORM_experloc"/>
+		/// </param>
+		/// <param name="return_exprlen">
+		/// The length of the location expression
+		/// </param>
+		/// <param name="block_ptr">
+		/// a pointer to the bytes of the location expression itself
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_formexprloc(
+			IntPtr attr,
+			out ulong return_exprlen,
+			out IntPtr block_ptr,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The function is just for the convenience of libdwarf clients that might wish to categorize
+		/// the FORM of a particular attribute. The DWARF specification divides FORMs into 
+		/// classes in Chapter 7 and this function figures out the correct class for a form.
+		/// <br/>
+		/// The function <see cref="dwarf_get_version_of_die"/> may be helpful in filling out
+		/// arguments for a call to <see cref="dwarf_get_form_class"/>.
+		/// </summary>
+		/// <param name="dwversion">
+		/// The dwarf version of the compilation unit involved
+		/// (2 for DWARF2, 3 for DWARF3, 4 for DWARF 4).
+		/// </param>
+		/// <param name="attrnum">
+		/// The attribute number of the attribute involved (for example, <see cref="DW_AT_name"/>).
+		/// </param>
+		/// <param name="offset_size">
+		/// The length of an offset in the current compilation unit
+		/// (4 for 32bit dwarf or 8 for 64bit dwarf).
+		/// </param>
+		/// <param name="form">
+		/// the attribute form number.
+		/// If form <see cref="DW_FORM_indirect"/> is passed in <see cref="DW_FORM_CLASS_UNKNOWN"/>
+		/// will be returned as this form has no defined ’class’.
+		/// </param>
+		/// <returns>
+		/// When it returns <see cref="DW_FORM_CLASS_UNKNOWN"/> the function is simply saying it could
+		/// not determine the correct class given t he arguments presented. Some user-defined attributes
+		/// might have this problem.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern Dwarf_Form_Class dwarf_get_form_class(
+			ushort dwversion,
+			ushort attrnum,
+			ushort offset_size,
+			ushort form
+		);
+
+		/// <summary>
+		/// The only current applicability is the block value of a
+		/// <see cref="DW_AT_discr_list"/> attribute.
+		/// <br/>
+		/// Those values are useful for calls to <see cref="dwarf_discr_entry_u"/> or
+		/// <see cref="dwarf_discr_entry_s"/> to get the actual discriminant values.
+		/// See the example below.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="blockpointer">
+		/// Retrieved from <see cref="dwarf_formblock"/>
+		/// </param>
+		/// <param name="blocklen">
+		/// Retrieved from <see cref="dwarf_formblock"/>
+		/// </param>
+		/// <param name="dsc_head_out">
+		/// A pointer to the discriminant information for the discriminant list
+		/// </param>
+		/// <param name="dsc_array_length_out">
+		/// the count of discriminant entries
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if the block is empty.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_discr_list(
+			IntPtr dbg,
+			IntPtr blockpointer,
+			ulong blocklen,
+			out IntPtr dsc_head_out,
+			out ulong dsc_array_length_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// If <paramref name="dsc_type"/> is <see cref="DW_DSC_label"/>,
+		/// <paramref name="dsc_low"/> is set to the discriminant value and
+		/// <paramref name="dsc_high"/> is set to zero.
+		/// <br/>
+		/// If <paramref name="dsc_type"/> is <see cref="DW_DSC_range"/>,
+		/// <paramref name="dsc_low"/> is set to the low end of the discriminant range and
+		/// <paramref name="dsc_high"/> is set to the high end of the discriminant range.
+		/// <br/> 
+		/// Due to the nature of the LEB numbers in the discriminant representation in DWARF
+		/// one must call the correct one of <see cref="dwarf_discr_entry_u"/> or
+		/// <see cref="dwarf_discr_entry_s"/>, based on whether the discriminant is signed or unsigned.
+		/// Casting an unsigned to signed is not always going to get the right value.
+		/// </summary>
+		/// <param name="dsc_head"></param>
+		/// <param name="dsc_array_index">
+		/// Valid values are zero to (dsc_array_length_out -1)
+		/// from a <see cref="dwarf_discr_list"/> call.
+		/// </param>
+		/// <param name="dsc_type">
+		/// Part of the discriminant values for that index.
+		/// <param name="dsc_low">The discriminant values for that index.</param>
+		/// <param name="dsc_high">The discriminant values for that index.</param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="dsc_array_index"/> is outside
+		/// the range of valid indexes.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_discr_entry_u(
+			IntPtr dsc_head,
+			ulong dsc_array_index,
+			out ushort dsc_type,
+			out ulong dsc_low,
+			out ulong dsc_high,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// This is identical to <see cref="dwarf_discr_entry_u"/> except that the discriminant
+		/// values are signed values in this interface. Callers must check the discriminant
+		/// type and call the correct function.
+		/// </summary>
+		/// <param name="dsc_head"></param>
+		/// <param name="dsc_array_index"></param>
+		/// <param name="dsc_type"></param>
+		/// <param name="dsc_low"></param>
+		/// <param name="dsc_high"></param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_discr_entry_s(
+			IntPtr dsc_head,
+			ulong dsc_array_index,
+			out ushort dsc_type,
+			out long dsc_low,
+			out long dsc_high,
+			out IntPtr error
+		);
+
+	#endregion //Attribute Queries
 
 #endregion
 	}
