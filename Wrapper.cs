@@ -2014,7 +2014,176 @@ namespace Dwarf_net
 			out IntPtr error
 		);
 
-	#endregion //Attribute Queries
+		#endregion //Attribute Queries
+
+	#region Location List Operations, Raw .debug_loclists (6.9)
+
+		/// <summary>
+		/// A small amount of data for each Location List Table (DWARF5 section 7.29)
+		/// is recorded in dbg as a side effect.
+		/// Normally libdwarf will have already called this, but if an application never
+		/// requests any .debug_info data the section might not be loaded.
+		/// If the section is loaded this returns very quickly and will set
+		/// <paramref name="loclists_count"/> just as described in this paragraph.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="loclists_count">
+		/// The number of distinct section contents that exist.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_load_loclists(
+			IntPtr dbg,
+			out ulong loclists_count,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// A call to <see cref="dwarf_load_loclists"/> that succeeds gets you the count of
+		/// contexts and <see cref="dwarf_get_loclist_context_basics"/> for any
+		/// "i >= 0 and i < count" gets you the context values relevant to .debug_loclists.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="context_index"></param>
+		/// <param name="header_offset"></param>
+		/// <param name="offset_size"></param>
+		/// <param name="extension_size"></param>
+		/// <param name="version"></param>
+		/// <param name="address_size"></param>
+		/// <param name="segment_selector_size"></param>
+		/// <param name="offset_entry_count">
+		/// Used for <see cref="dwarf_get_loclist_offset_index_value"/>
+		/// </param>
+		/// <param name="offset_of_offset_array"></param>
+		/// <param name="offset_of_first_locentry"></param>
+		/// <param name="offset_past_last_locentry"></param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="context_index"/> is out of range.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> is never returned.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_loclist_context_basics(
+			IntPtr dbg,
+			ulong context_index,
+			out ulong header_offset,
+			out byte offset_size,
+			out byte extension_size,
+			out uint version,
+			out byte address_size,
+			out byte segment_selector_size,
+			out ulong offset_entry_count,
+			out ulong offset_of_offset_array,
+			out ulong offset_of_first_locentry,
+			out ulong offset_past_last_locentry,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="context_index">
+		/// Pass in exactly as the same field passed to <see cref="dwarf_get_loclist_context_basics"/>.
+		/// </param>
+		/// <param name="offsetentry_index">
+		/// Pass in based on the return field offset_entry_count from
+		/// <see cref="dwarf_get_loclist_context_basics"/>, meaning for that
+		/// <paramref name="context_index"/> an offset_entry_index >=0 and < offset_entry_count.
+		/// </param>
+		/// <param name="offset_value_out">
+		/// The value in the Range List Table offset array
+		/// </param>
+		/// <param name="global_offset_value_out">
+		/// The section offset (in .debug_addr) of the offset value
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if one of the indices is out of range.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if there is some corruption of DWARF5 data
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_loclist_offset_index_value(
+			IntPtr dbg,
+			ulong context_index,
+			ulong offsetentry_index,
+			out ulong offset_value_out,
+			out ulong global_offset_value_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Returns a single DW_RLE* record (see dwarf.h) fields
+		/// <br/>
+		/// Some record kinds have 1 or 0 operands, most have two operands
+		/// (the records describing ranges).
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="contextnumber">
+		/// The number of the current loclist context.
+		/// </param>
+		/// <param name="entry_offset">
+		/// The section offset (section-global offset) of the next record.
+		/// </param>
+		/// <param name="endoffset">
+		/// One past the last entry in this rle context.
+		/// </param>
+		/// <param name="entrylen">
+		/// The length in the .debug_loclists section of the particular record returned.
+		/// It’s used to increment to the next record within this loclist context.
+		/// </param>
+		/// <param name="entry_kind">
+		/// The DW_RLE* number.
+		/// </param>
+		/// <param name="entry_operand1"></param>
+		/// <param name="entry_operand2"></param>
+		/// <param name="expr_ops_blocksize">
+		/// The size, in bytes, of the Dwarf Expression (some operations have no Dwarf Expression
+		/// and those that do can have a zero length blocksize)
+		/// </param>
+		/// <param name="expr_ops_offset">
+		/// The offset (in the .debug_loclists section) of the first byte of the Dwarf Expression
+		/// </param>
+		/// <param name="expr_opsdata">
+		/// A pointer to the bytes of the Dwarf Expression
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if the <paramref name="contextnumber"/> is out of range.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if the .debug_loclists section is malformed or the
+		/// <paramref name="entry_offset"/> is incorrect.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_loclist_lle(
+			IntPtr dbg,
+			ulong contextnumber,
+			ulong entry_offset,
+			ulong endoffset,
+			out uint entrylen,
+			out uint entry_kind,
+			out ulong entry_operand1,
+			out ulong entry_operand2,
+			out ulong expr_ops_blocksize,
+			out ulong expr_ops_offset,
+			out IntPtr expr_opsdata,
+			out IntPtr error
+		);
+
+	#endregion //Location List Operations, Raw .debug_loclists (6.9)
 
 #endregion
 	}
