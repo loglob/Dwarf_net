@@ -2815,6 +2815,289 @@ namespace Dwarf_net
 
 	#endregion //Get the set of Source File Names (6.14)
 
+	#region Get Information About a Single Line Table Line (6.15)
+	/* Omitted functions:
+		* dwarf_lineoff(): deprecated
+	*/
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_bool">
+		/// Non-zero if <paramref name="line"/> represents a line number entry
+		/// that is marked as beginning a statement.
+		/// <br/>
+		/// Zero if <paramref name="line"/> represents a line number entry
+		/// that is not marked as beginning a statement.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if there is no corresponding statement program
+		/// (i.e., if there is no line information).
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_linebeginstatement(
+			IntPtr line,
+			out int return_bool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Determines if <paramref name="line"/> represents a line number entry
+		/// that is marked as ending a text sequence
+		/// <br/>
+		/// A line number entry that is marked as ending a text sequence is an entry
+		/// with an address one beyond the highest address used by the current sequence
+		/// of line table entries (that is, the table entry is a <see cref="DW_LNE_end_sequence"/>
+		/// entry (see the DWARF specification)).
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_bool">
+		/// non-zero if <paramref name="line"/> represents a line number entry
+		/// that is marked as ending a text sequence, 
+		/// zero otherwise.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_lineendsequence(
+			IntPtr line,
+			out int return_bool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="returned_lineno">
+		/// The source statement line number corresponding to the descriptor <paramref name="line"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_lineno(
+			IntPtr line,
+			out ulong returned_lineno,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// DWARF2-4 and experimental:
+		/// When the number returned through <paramref name="returned_fileno"/> is zero
+		/// it means the file name is unknown (see the DWA RF2/3 line table specification).
+		/// <br/>
+		/// When the number returned through <paramref name="returned_fileno"/> is non-zero
+		/// it is a file number: subtract 1 from this file number to get an index into the array 
+		/// of strings returned by <see cref="dwarf_srcfiles"/> (verify the resulting index is in
+		/// range for the array of strings before indexing into the array of strings).
+		/// The file number may exceed the size of the array of strings returned by
+		/// <see cref="dwarf_srcfiles"/> because it does not return files names defined with the 
+		/// <see cref="DW_DLE_define_file"/> operator.
+		/// <br/>
+		/// DWARF5:
+		/// To index into the array of strings returned by <see cref="dwarf_srcfiles"/>,
+		/// use the number returned through <paramref name="returned_fileno"/>.
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="returned_fileno">
+		/// the source statement line number corresponding to the descriptor file number
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_line_srcfileno(
+			IntPtr line,
+			out ulong returned_fileno,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_lineaddr">
+		/// the address associated with the descriptor <paramref name="line"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_lineaddr(
+			IntPtr line,
+			out ulong return_lineaddr,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_lineoff">
+		/// The column number at which the statement represented by line begins.
+		/// <br/>
+		/// Zero if the column number of the statement is not represented
+		/// (meaning the producer library call was given zero as the column number).
+		/// Zero is the correct value meaning "left edge" as defined in the DWARF2/3/4 specification
+		/// (section 6.2.2).
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_lineoff_b(
+			IntPtr line,
+			out ulong return_lineoff,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// If the applicable file name in the line table Statement Program Prolog does not start with
+		/// a ’/’ character the string in DW_AT_comp_dir (if applicable and present) or the
+		/// applicable directory name from the line Statement Program Prolog is prepended to the
+		/// file name in the line table Statement Program Prolog to make a f ull path
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_linesrc">
+		/// The name of the source-file where <paramref name="line"/> occurs
+		/// <br/>
+		/// should be freed using <see cref="dwarf_dealloc"/> with the allocation type
+		/// <see cref="DW_DLA_STRING"/> when no longer of interest.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_linesrc(
+			IntPtr line,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string return_linesrc,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Determines 
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_bool">
+		/// non-zero if the line is marked as beginning a basic block, zero otherwise
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_lineblock(
+			IntPtr line,
+			out int return_bool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="return_bool">
+		/// Non-zero if the line is marked as being a <see cref="DW_LNE_set_address"/> operation,
+		/// zero otherwise.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_line_is_addr_set(
+			IntPtr line,
+			out int return_bool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// While it is pretty safe to assume that the isa and discriminator values
+		/// returned are very small integers, there is no restriction in the standard
+		/// </summary>
+		/// <param name="line">
+		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
+		/// <see cref="dwarf_srclines_from_linecontext"/>
+		/// </param>
+		/// <param name="prologue_end"></param>
+		/// <param name="epilogue_begin"></param>
+		/// <param name="isa"></param>
+		/// <param name="discriminator"></param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_prologue_end_etc(
+			IntPtr line,
+			out int prologue_end,
+			out int epilogue_begin,
+			out ulong isa,
+			out ulong discriminator,
+			out IntPtr error
+		);
+
+	#endregion //Get Information About a Single Line Table Line (6.15)
+
 #endregion
 	}
 }
