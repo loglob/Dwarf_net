@@ -720,7 +720,7 @@ namespace Dwarf_net
 		/// the section version, which would be (for .debug_info) 2 for
 		/// DWARF2, 3 for DWARF3, 4 for DWARF4, or 5 for DWARF5
 		/// </param>
-		/// <param name="abbred_offset">
+		/// <param name="abbrev_offset">
 		/// the .debug_abbrev section offset of the abbreviations for this compilation unit
 		/// </param>
 		/// <param name="address_size">
@@ -781,7 +781,7 @@ namespace Dwarf_net
 			int is_info,
 			out ulong cu_header_length,
 			out ushort version_stamp,
-			out ulong abbred_offset,
+			out ulong abbrev_offset,
 			out ushort address_size,
 			out ushort offset_size,
 			out ushort extension_size,
