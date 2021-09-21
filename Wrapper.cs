@@ -79,6 +79,65 @@ namespace Dwarf_net
 		private const string lib = "libdwarf.so";
 
 #region Functions
+	#region Storage Deallocation (5.2)
+
+		/// <summary>
+		/// Dealloc any of the libdwarf types
+		/// <br/>
+		/// In some cases the pointers returned by a libdwarf call are pointers to data which is not
+		/// freeable. The library knows from the allocation type provided to it whether the space is
+		/// freeable or not and will not free inappropriately when dwarf_dealloc() is called.
+		/// So it is vital that <paramref name="appropriate_dla_name"/> is proper allocation type.
+		/// </summary>
+		/// <param name="dbg">
+		/// The object for which the storage was allocated
+		/// </param>
+		/// <param name="space_to_dealloc">
+		/// The area to be free-ed
+		/// </param>
+		/// <param name="appropriate_dla_name">
+		/// Identifier that specifies what the pointer points to (the allocation type)
+		/// </param>
+		[DllImport(lib)]
+		public static extern void dwarf_dealloc(
+			IntPtr dbg,
+			IntPtr space_to_dealloc,
+			int appropriate_dla_name
+		);
+
+		/// <summary>
+		/// Deallocates a Dwarf_Die
+		/// </summary>
+		/// <param name="die"></param>
+		[DllImport(lib)]
+		public static extern void dwarf_dealloc_die(
+			IntPtr die
+		);
+
+		/// <summary>
+		/// Deallocates a Dwarf_Attribute
+		/// </summary>
+		/// <param name="attr">
+		/// A Dwarf_Attribute from <see cref="dwarf_attrlist"/>
+		/// </param>
+		[DllImport(lib)]
+		public static extern void dwarf_dealloc_attribute(
+			IntPtr attr
+		);
+
+		/// <summary>
+		/// Deallocates a Dwarf_Error.
+		/// These arise when some libdwarf call returns <see cref="DW_DLV_ERROR"/>.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="err"></param>
+		[DllImport(lib)]
+		public static extern void dwarf_dealloc_error(
+			IntPtr dbg,
+			IntPtr err
+		);
+
+	#endregion
 
 	#region Initialization Operations (6.1)
 	/* Omitted functions:
