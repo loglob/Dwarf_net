@@ -9,5 +9,8 @@ namespace Dwarf_net
 
 		public DwarfException(string message) : base(message)
 		{ }
+
+		public static DwarfException BadReturn(string func)
+			=> new DwarfException($"Unexpected return code from {func}()");
 	}
 }
