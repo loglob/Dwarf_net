@@ -9,6 +9,8 @@ namespace Dwarf_net
 {
 	public class Debug
 	{
+#region Subtypes
+
 		/// <summary>
 		/// A DWARF section
 		/// </summary>
@@ -128,6 +130,10 @@ namespace Dwarf_net
 			}
 		}
 
+#endregion
+
+#region Fields
+
 		/// <summary>
 		/// The handle returned from dwarf_init_*
 		/// </summary>
@@ -168,55 +174,9 @@ namespace Dwarf_net
 		/// </summary>
 		public readonly Section[] Sections;
 
-		private IEnumerable<CompilationUnitHeader> headers(bool isInfo)
-		{
-			ulong offset = 0;
+#endregion
 
-			for (;;)
-			{
-				switch(Wrapper.dwarf_next_cu_header_d(
-					handle, isInfo ? 1 : 0,
-					out ulong headerLength,
-					out ushort versionStamp,
-					out ulong abbrevOffset,
-					out ushort addressSize,
-					out ushort offsetSize,
-					out ushort extensionSize,
-					out ulong signature,
-					out ulong typeOffset,
-					out ulong nextOffset,
-					out ushort headerType,
-					out IntPtr error
-				))
-				{
-					case DW_DLV_NO_ENTRY:
-						yield break;
-					
-					case DW_DLV_OK:
-						yield return new CompilationUnitHeader(
-							headerLength,
-							versionStamp,
-							abbrevOffset,
-							addressSize,
-							offsetSize,
-							extensionSize,
-							typeOffset,
-							headerType,
-							offset
-						);
-
-						offset = nextOffset;
-					break;
-
-					case DW_DLV_ERROR:
-						throw new DwarfException(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_sec_group_map");
-				}
-			}
-		}
-
+#region Properties
 		/// <summary>
 		/// The compilation units from the .debug_info section
 		/// </summary>
@@ -228,62 +188,9 @@ namespace Dwarf_net
 		/// </summary>
 		public CompilationUnitHeader[] TypeUnits
 			=> headers(false).ToArray();
+#endregion
 
-		/// <summary>
-		/// Wrapper for <see cref="Wrapper.dwarf_init_path">
-		/// </summary>
-		/// <returns>A dwarf_Debug reference</returns>
-		private static IntPtr initPath(string path, uint group)
-		{
-			if(path is null)
-				throw new ArgumentNullException(nameof(path));
-
-			switch(Wrapper.dwarf_init_path(path,
-				IntPtr.Zero, 0, 0, group,
-				null, IntPtr.Zero, out IntPtr handle,
-				IntPtr.Zero, 0, IntPtr.Zero,
-				out IntPtr err))
-			{
-				case DW_DLV_OK:
-					return handle;
-
-				case DW_DLV_ERROR:
-					throw new DwarfException(err);
-
-				case DW_DLV_NO_ENTRY:
-					if(File.Exists(path))
-						throw new DwarfException("Unknown DLV_NO_ENTRY error");
-					else
-						throw new FileNotFoundException(null, path);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_init_b");
-			}
-		}
-
-		/// <summary>
-		/// Wrapper for <see cref="Wrapper.dwarf_init_b"/>
-		/// </summary>
-		/// <returns>A dwarf_Debug reference</returns>
-		private static IntPtr initB(int fd, uint group)
-		{
-			switch(Wrapper.dwarf_init_b(fd, 0, group, null, IntPtr.Zero,
-				out IntPtr handle, out IntPtr err))
-			{
-				case DW_DLV_OK:
-					return handle;
-
-				case DW_DLV_ERROR:
-					throw new DwarfException(err);
-
-				case DW_DLV_NO_ENTRY:
-					throw new DwarfException("No debug sections found");
-
-				default:
-					throw DwarfException.BadReturn("dwarf_init_b");
-			}
-		}
-
+#region Constructors
 		private Debug(IntPtr handle)
 		{
 			IntPtr error;
@@ -363,10 +270,121 @@ namespace Dwarf_net
 		public Debug(int fd, uint group = 0) : this(initB(fd, group))
 		{ }
 
+#endregion
+
 		~Debug()
 		{
 			if(Wrapper.dwarf_finish(handle, out IntPtr err) != DW_DLV_OK)
 				throw new DwarfException(err);
 		}
+
+#region Methods
+		private IEnumerable<CompilationUnitHeader> headers(bool isInfo)
+		{
+			ulong offset = 0;
+
+			for (;;)
+			{
+				switch(Wrapper.dwarf_next_cu_header_d(
+					handle, isInfo ? 1 : 0,
+					out ulong headerLength,
+					out ushort versionStamp,
+					out ulong abbrevOffset,
+					out ushort addressSize,
+					out ushort offsetSize,
+					out ushort extensionSize,
+					out ulong signature,
+					out ulong typeOffset,
+					out ulong nextOffset,
+					out ushort headerType,
+					out IntPtr error
+				))
+				{
+					case DW_DLV_NO_ENTRY:
+						yield break;
+					
+					case DW_DLV_OK:
+						yield return new CompilationUnitHeader(
+							headerLength,
+							versionStamp,
+							abbrevOffset,
+							addressSize,
+							offsetSize,
+							extensionSize,
+							typeOffset,
+							headerType,
+							offset
+						);
+
+						offset = nextOffset;
+					break;
+
+					case DW_DLV_ERROR:
+						throw new DwarfException(error);
+
+					default:
+						throw DwarfException.BadReturn("dwarf_sec_group_map");
+				}
+			}
+		}
+#endregion
+
+#region Static Helper Methods
+		/// <summary>
+		/// Wrapper for <see cref="Wrapper.dwarf_init_path">
+		/// </summary>
+		/// <returns>A dwarf_Debug reference</returns>
+		private static IntPtr initPath(string path, uint group)
+		{
+			if(path is null)
+				throw new ArgumentNullException(nameof(path));
+
+			switch(Wrapper.dwarf_init_path(path,
+				IntPtr.Zero, 0, 0, group,
+				null, IntPtr.Zero, out IntPtr handle,
+				IntPtr.Zero, 0, IntPtr.Zero,
+				out IntPtr err))
+			{
+				case DW_DLV_OK:
+					return handle;
+
+				case DW_DLV_ERROR:
+					throw new DwarfException(err);
+
+				case DW_DLV_NO_ENTRY:
+					if(File.Exists(path))
+						throw new DwarfException("Unknown DLV_NO_ENTRY error");
+					else
+						throw new FileNotFoundException(null, path);
+
+				default:
+					throw DwarfException.BadReturn("dwarf_init_b");
+			}
+		}
+
+		/// <summary>
+		/// Wrapper for <see cref="Wrapper.dwarf_init_b"/>
+		/// </summary>
+		/// <returns>A dwarf_Debug reference</returns>
+		private static IntPtr initB(int fd, uint group)
+		{
+			switch(Wrapper.dwarf_init_b(fd, 0, group, null, IntPtr.Zero,
+				out IntPtr handle, out IntPtr err))
+			{
+				case DW_DLV_OK:
+					return handle;
+
+				case DW_DLV_ERROR:
+					throw new DwarfException(err);
+
+				case DW_DLV_NO_ENTRY:
+					throw new DwarfException("No debug sections found");
+
+				default:
+					throw DwarfException.BadReturn("dwarf_init_b");
+			}
+		}
+
+#endregion
 	}
 }
