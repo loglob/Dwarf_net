@@ -137,7 +137,7 @@ namespace Dwarf_net
 		/// <summary>
 		/// The handle returned from dwarf_init_*
 		/// </summary>
-		private IntPtr handle;
+		internal IntPtr handle;
 
 		/// <summary>
 		/// The total amount of sections in the object.
