@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -31,6 +32,99 @@ namespace Dwarf_net
 				this.Name = name;
 				this.GroupNumber = group;
 				this.SectionNumber = section;
+			}
+		}
+
+		/// <summary>
+		/// A Compilation Unit
+		/// </summary>
+		public readonly struct CompilationUnitHeader
+		{
+			/// <summary>
+			/// The offset in the .debug_info section of this CU Header 
+			/// </summary>
+			public readonly ulong Offset;
+
+			/// <summary>
+			/// The length in bytes of the compilation unit header
+			/// </summary>
+			public readonly ulong Length;
+			
+			/// <summary>
+			/// The section version, which would be (for .debug_info)
+			/// 2 for DWARF2, 3 for DWARF3, 4 for DWARF4, or 5 for DWARF5
+			/// </summary>
+			public readonly ushort VersionStamp;
+
+			/// <summary>
+			/// The .debug_abbrev section offset of the abbreviations for this compilation unit
+			/// </summary>
+			public readonly ulong AbbreviationOffset;
+
+			/// <summary>
+			/// The size of an address in this compilation unit. Which is usually 4 or 8.
+			/// </summary>
+			public readonly ushort AddressSize;
+
+			/// <summary>
+			/// the size in bytes of an offset for the compilation unit.
+			/// The offset size is 4 for 32bit dwarf and 8 for 64bit dwarf.
+			/// This is the offset size in dwarf data, not the address size inside the executable code.
+			/// The offset size can be 4 even if embedded in a 64bit elf file
+			/// (which is normal for 64bit elf),
+			/// and can be 8 even in a 32bit elf file (which probably will never be seen in practice).
+			/// </summary>
+			public readonly ushort OffsetSize;
+
+			/// <summary>
+			/// Only relevant if <see cref="OffsetSize"/> is 8.
+			/// The value is not normally useful but returned for completeness.
+			/// <br/>
+			/// Returns 0 if the CU is MIPS/IRIX non-standard 64-bit dwarf
+			/// (MIPS/IRIX 64bit dwarf was created years before DWARF3 defined 64-bit dwarf)
+			/// and returns 4 if the dwarf uses the standard 64-bit extension
+			/// (the 4 is the size in bytes of the 0xffffffff in the initial length field which
+			/// indicates the following 8 bytes in the .debug_info section are the real length).
+			/// <br/>
+			/// See the DWARF3 or DWARF4 standard, section 7.4.
+			/// </summary>
+			public readonly ushort ExtensionSize;
+
+			/// <summary>
+			/// Only relevant the Compilation Unit has a type signature.
+			/// The local offset within the Compilation Unit of the the type offset
+			/// the .debug_types entry represents.
+			/// It matters because a <see cref="DW_AT_type"/> referencing the type unit may
+			/// reference an inner type, such as a C++ class in a C++ namespace, but the type
+			/// itself has the enclosing namespace in the .debug_type type_unit.
+			/// </summary>
+			public readonly ulong TypeOffset;
+
+			/// <summary>
+			/// The type of this Compilation Unit.
+			/// <br/>
+			/// One of <see cref="DW_UT_compile"/>, <see cref="DW_UT_partial"/>
+			/// or <see cref="DW_UT_type"/>.
+			/// <br/>
+			/// In DWARF4 a <see cref="DW_UT_type"> will be in .debug_types,
+			/// but in DWARF5 these compilation units are in .debug_info and the Debug Fission
+			/// (ie Split Dwarf) .debug_info.dwo sections.
+			/// </summary>
+			public readonly ushort Type;
+
+			internal CompilationUnitHeader(ulong length, ushort versionStamp,
+				ulong abbreviationOffset, ushort addressSize, ushort offsetSize,
+				ushort extensionSize, ulong typeOffset, ushort type, ulong offset)
+			{
+				Length = length;
+				VersionStamp = versionStamp;
+				AbbreviationOffset = abbreviationOffset;
+				AddressSize = addressSize;
+				OffsetSize = offsetSize;
+				ExtensionSize = extensionSize;
+				TypeOffset = typeOffset;
+				Type = type;
+				Offset = offset;
 			}
 		}
 
@@ -74,6 +168,67 @@ namespace Dwarf_net
 		/// </summary>
 		public readonly Section[] Sections;
 
+		private IEnumerable<CompilationUnitHeader> headers(bool isInfo)
+		{
+			ulong offset = 0;
+
+			for (;;)
+			{
+				switch(Wrapper.dwarf_next_cu_header_d(
+					handle, isInfo ? 1 : 0,
+					out ulong headerLength,
+					out ushort versionStamp,
+					out ulong abbrevOffset,
+					out ushort addressSize,
+					out ushort offsetSize,
+					out ushort extensionSize,
+					out ulong signature,
+					out ulong typeOffset,
+					out ulong nextOffset,
+					out ushort headerType,
+					out IntPtr error
+				))
+				{
+					case DW_DLV_NO_ENTRY:
+						yield break;
+					
+					case DW_DLV_OK:
+						yield return new CompilationUnitHeader(
+							headerLength,
+							versionStamp,
+							abbrevOffset,
+							addressSize,
+							offsetSize,
+							extensionSize,
+							typeOffset,
+							headerType,
+							offset
+						);
+
+						offset = nextOffset;
+					break;
+
+					case DW_DLV_ERROR:
+						throw new DwarfException(error);
+
+					default:
+						throw DwarfException.BadReturn("dwarf_sec_group_map");
+				}
+			}
+		}
+
+		/// <summary>
+		/// The compilation units from the .debug_info section
+		/// </summary>
+		public CompilationUnitHeader[] InfoUnits
+			=> headers(true).ToArray();
+
+		/// <summary>
+		/// The compilation units from the .debug_types section
+		/// </summary>
+		public CompilationUnitHeader[] TypeUnits
+			=> headers(false).ToArray();
+
 		/// <summary>
 		/// Wrapper for <see cref="Wrapper.dwarf_init_path">
 		/// </summary>
@@ -102,7 +257,7 @@ namespace Dwarf_net
 						throw new FileNotFoundException(null, path);
 
 				default:
-					throw new Exception("Unexpected return code from dwarf_init_b()");
+					throw DwarfException.BadReturn("dwarf_init_b");
 			}
 		}
 
@@ -125,7 +280,7 @@ namespace Dwarf_net
 					throw new DwarfException("No debug sections found");
 
 				default:
-					throw new DwarfException("Unexpected return code from dwarf_init_b()");
+					throw DwarfException.BadReturn("dwarf_init_b");
 			}
 		}
 
@@ -146,7 +301,7 @@ namespace Dwarf_net
 					throw new DwarfException(error);
 
 				default:
-					throw new DwarfException("Unexpected return code from dwarf_sec_group_sizes()");
+					throw DwarfException.BadReturn("dwarf_sec_group_sizes");
 			}
 
 			var groupNumbers = new ulong[mapEntryCount];
@@ -164,7 +319,7 @@ namespace Dwarf_net
 					throw new DwarfException(error);
 
 				default:
-					throw new DwarfException("Unexpected return code from dwarf_sec_group_map()");
+					throw DwarfException.BadReturn("dwarf_sec_group_map");
 			}
 
 			Sections = Enumerable.Range(0, (int)mapEntryCount)
