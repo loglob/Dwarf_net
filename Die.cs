@@ -236,6 +236,19 @@ namespace Dwarf_net
 			}
 		}
 
+		/// <summary>
+		/// The version and offset size of this DIE
+		/// </summary>
+		public (ushort Version, ushort OffsetSize) Version
+		{
+			get
+			{
+				(ushort v, ushort o) x;
+				Wrapper.dwarf_get_version_of_die(handle, out x.v, out x.o);
+				return x;
+			}
+		}
+
 #endregion
 
 #region Constructors
