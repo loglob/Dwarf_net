@@ -44,7 +44,7 @@ namespace Dwarf_net
 						return new Die(debug, kid);
 
 					case DW_DLV_ERROR:
-						throw new DwarfException(error);
+						throw DwarfException.Wrap(error);
 
 					default:
 						throw DwarfException.BadReturn("dwarf_child");
@@ -82,7 +82,7 @@ namespace Dwarf_net
 							break;
 
 						case DW_DLV_ERROR:
-							throw new DwarfException(error);
+							throw DwarfException.Wrap(error);
 
 						default:
 							throw DwarfException.BadReturn("dwarf_siblingof_b");
@@ -119,7 +119,7 @@ namespace Dwarf_net
 					case DW_DLV_OK:
 						return val;
 					case DW_DLV_ERROR:
-						throw new DwarfException(error);
+						throw DwarfException.Wrap(error);
 					default:
 						throw DwarfException.BadReturn("dwarf_tag");
 				}
@@ -138,12 +138,12 @@ namespace Dwarf_net
 			get
 			{
 				switch(Wrapper.dwarf_die_offsets(handle,
-					out ulong go, out _, out IntPtr err))
+					out ulong go, out _, out IntPtr error))
 				{
 					case DW_DLV_OK:
 						return go;
 					case DW_DLV_ERROR:
-						throw new DwarfException(err);
+						throw DwarfException.Wrap(error);
 					default:
 						throw DwarfException.BadReturn("dwarf_die_offsets");
 				}
@@ -159,12 +159,12 @@ namespace Dwarf_net
 			get
 			{
 				switch(Wrapper.dwarf_die_offsets(handle,
-					out _, out ulong uo, out IntPtr err))
+					out _, out ulong uo, out IntPtr error))
 				{
 					case DW_DLV_OK:
 						return uo;
 					case DW_DLV_ERROR:
-						throw new DwarfException(err);
+						throw DwarfException.Wrap(error);
 					default:
 						throw DwarfException.BadReturn("dwarf_die_offsets");
 				}
@@ -189,7 +189,7 @@ namespace Dwarf_net
 						return null;
 
 					case DW_DLV_ERROR:
-						throw new DwarfException(error);
+						throw DwarfException.Wrap(error);
 
 					default:
 						throw DwarfException.BadReturn("dwarf_diename");
@@ -228,7 +228,7 @@ namespace Dwarf_net
 					}
 
 					case DW_DLV_ERROR:
-						throw new DwarfException(error);
+						throw DwarfException.Wrap(error);
 
 					default:
 						throw DwarfException.BadReturn("dwarf_attrlist");
@@ -281,7 +281,7 @@ namespace Dwarf_net
 						"or of some random zero byte");
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(error);
+					throw DwarfException.Wrap(error);
 
 				default:
 					throw DwarfException.BadReturn("dwarf_offdie_b");
@@ -306,7 +306,7 @@ namespace Dwarf_net
 					return null;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(error);
+					throw DwarfException.Wrap(error);
 
 				default:
 					throw DwarfException.BadReturn("dwarf_die_text");
@@ -328,7 +328,7 @@ namespace Dwarf_net
 					return has != 0;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(error);
+					throw DwarfException.Wrap(error);
 
 				default:
 					throw DwarfException.BadReturn("dwarf_hasattr");
@@ -356,7 +356,7 @@ namespace Dwarf_net
 					return null;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(error);
+					throw DwarfException.Wrap(error);
 
 				default:
 					throw DwarfException.BadReturn("dwarf_attr");

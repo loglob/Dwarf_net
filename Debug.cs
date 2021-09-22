@@ -205,7 +205,7 @@ namespace Dwarf_net
 					break;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(error);
+					throw DwarfException.Wrap(error);
 
 				default:
 					throw DwarfException.BadReturn("dwarf_sec_group_sizes");
@@ -223,7 +223,7 @@ namespace Dwarf_net
 					break;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(error);
+					throw DwarfException.Wrap(error);
 
 				default:
 					throw DwarfException.BadReturn("dwarf_sec_group_map");
@@ -274,8 +274,8 @@ namespace Dwarf_net
 
 		~Debug()
 		{
-			if(Wrapper.dwarf_finish(handle, out IntPtr err) != DW_DLV_OK)
-				throw new DwarfException(err);
+			if(Wrapper.dwarf_finish(handle, out IntPtr error) != DW_DLV_OK)
+				throw DwarfException.Wrap(error);
 		}
 
 #region Methods
@@ -320,7 +320,7 @@ namespace Dwarf_net
 					break;
 
 					case DW_DLV_ERROR:
-						throw new DwarfException(error);
+						throw DwarfException.Wrap(error);
 
 					default:
 						throw DwarfException.BadReturn("dwarf_sec_group_map");
@@ -349,7 +349,7 @@ namespace Dwarf_net
 					return handle;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(err);
+					throw DwarfException.Wrap(err);
 
 				case DW_DLV_NO_ENTRY:
 					if(File.Exists(path))
@@ -375,7 +375,7 @@ namespace Dwarf_net
 					return handle;
 
 				case DW_DLV_ERROR:
-					throw new DwarfException(err);
+					throw DwarfException.Wrap(err);
 
 				case DW_DLV_NO_ENTRY:
 					throw new DwarfException("No debug sections found");
