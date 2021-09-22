@@ -2,11 +2,43 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using static Dwarf_net.Defines;
 
 namespace Dwarf_net
 {
 	internal static class Util
 	{
+		public delegate int getter<T>(out T ret, out IntPtr error);
+
+		public delegate int getter<A, B, C>(out A a, out B b, out C c, out IntPtr error);
+
+
+		public static T wrapGetter<T>(getter<T> f, string name)
+		{
+			wrapGetter(f, name, out T val);
+			return val;
+		}
+
+		public static bool wrapGetter<T>(getter<T> f, string name, out T val, bool allowNone = false)
+		{
+			switch(f(out val, out IntPtr error))
+			{
+				case DW_DLV_OK:
+					return true;
+
+				case DW_DLV_NO_ENTRY:
+					if(allowNone)
+						return false;
+				goto default;
+
+				case DW_DLV_ERROR:
+					throw DwarfException.Wrap(error);
+
+				default:
+					throw DwarfException.BadReturn(name);
+			}
+		}
+
 		/// <summary>
 		/// Iterates over all integers >= 0
 		/// </summary>
