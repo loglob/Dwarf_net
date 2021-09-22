@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 
 /** Type modifiers prepended to enum type definitions */
-const string enumModifiers = "";
+const string enumModifiers = "public ";
 
 static readonly (string, string)[] manual = {
 	("DW_DLV_BADADDR", "(IntPtr)-1L"),
@@ -27,7 +27,7 @@ static string RemoveComment(string s)
 static IEnumerable<string> extractEnums(string file)
 	=> new Regex(@"enum\s+\S+\s*{.*?}", RegexOptions.Singleline)
 		.Matches(file)
-		.Select(m => m.Value);
+		.Select(m => enumModifiers + m.Value);
 
 delegate bool MaybeFunc<A, B>(A input, out B output);
 
