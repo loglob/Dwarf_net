@@ -5,6 +5,28 @@ using static Dwarf_net.Defines;
 namespace Dwarf_net
 {
 	/// <summary>
+	/// The Dwarf_Block type is used to contain the value of an attribute whose form is either
+	/// <see cref="DW_FORM_block1"/>, <see cref="DW_FORM_block2"/>, <see cref="DW_FORM_block4"/>,
+	/// <see cref="DW_FORM_block8"/>, or <see cref="DW_FORM_block"/>.
+	/// Its intended use is to deliver the value for an attribute of any of these forms.
+	/// </summary>
+	[StructLayout(LayoutKind.Sequential)]
+	public struct Block
+	{
+		/// <summary>
+		/// The length in bytes of the data pointed to by the <paramref name="bl_data"/> field.
+		/// </summary>
+		ulong bl_len;
+		/// <summary>
+		/// A pointer to the uninterpreted data.
+		/// The data pointed to is not necessarily at any useful alignment.
+		/// </summary>
+		IntPtr bl_data;
+		byte bl_from_loclist;
+		ulong bl_section_offset;
+	}
+
+	/// <summary>
 	/// Wrapper around native libdwarf
 	/// </summary>
 	static internal class Wrapper
@@ -24,28 +46,6 @@ namespace Dwarf_net
 			/// </summary>
 			int check_verbose_mode;
 		};
-
-		/// <summary>
-		/// The Dwarf_Block type is used to contain the value of an attribute whose form is either
-		/// <see cref="DW_FORM_block1"/>, <see cref="DW_FORM_block2"/>, <see cref="DW_FORM_block4"/>,
-		/// <see cref="DW_FORM_block8"/>, or <see cref="DW_FORM_block"/>.
-		/// Its intended use is to deliver the value for an attribute of any of these forms.
-		/// </summary>
-		[StructLayout(LayoutKind.Sequential)]
-		public struct Block
-		{
-			/// <summary>
-			/// The length in bytes of the data pointed to by the <paramref name="bl_data"/> field.
-			/// </summary>
-			ulong bl_len;
-			/// <summary>
-			/// A pointer to the uninterpreted data.
-			/// The data pointed to is not necessarily at any useful alignment.
-			/// </summary>
-			IntPtr bl_data;
-			byte bl_from_loclist;
-			ulong bl_section_offset;
-		}
 
 		[StructLayout(LayoutKind.Sequential)]
 		public struct Form_Data16
@@ -1221,7 +1221,7 @@ namespace Dwarf_net
 		/// <returns>
 		/// <see cref="DW_DLV_OK"/> on success.
 		/// <br/>
-		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramreg name="attrcount"/> is zero.
+		/// <see cref="DW_DLV_NO_ENTRY"/> if <paramref name="attrcount"/> is zero.
 		/// <br/>
 		/// <see cref="DW_DLV_ERROR"/> if an error occurred.
 		/// </returns>
@@ -1851,7 +1851,7 @@ namespace Dwarf_net
 		/// A pointer to a Dwarf_Block structure containing the value of the attribute
 		/// represented by the descriptor <paramref name="attr"/>.
 		/// <br/>
-		/// Use <see cref="Marshal.PtrToStructure"/> with type <see cref="Block"/> to dereference.
+		/// Use <see cref="Marshal.PtrToStructure{T}"/> with type <see cref="Block"/> to dereference.
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
@@ -3156,6 +3156,498 @@ namespace Dwarf_net
 		);
 
 	#endregion //Get Information About a Single Line Table Line (6.15)
+
+	#region Accelerated Access By Name operations (6.16)
+	/* Omitted functions:
+		* dwarf_return_empty_pubnames
+		* dwarf_get_cu_die_offset_given_cu_header_offset
+		* dwarf_pubtype_type_die_offset, dwarf_pubtype_cu_offset, dwarf_pubtypename:
+			replaced by dwarf_pubtype_name_offsets
+		* Accelerated Access for Weak-, Func-, Type-, var-names: non-standard
+	*/
+
+		/// <summary>
+		/// For each CU represented in .debug_pubnames, etc, there is a .debug_pubnames header.
+		/// For any given Dwarf_Global this returns the content of the applicable header
+		/// <br/>
+		/// This allows dwarfdump, or any DWARF dumper, to print pubnames(etc) specific CU header data.
+		/// </summary>
+		/// <param name="global">
+		/// Casting Dwarf_Type (etc) to Dwarf_Global for a call to this function allows this
+		/// to be used for any of these accelerated-access types
+		/// </param>
+		/// <param name="offset_pub_header"></param>
+		/// <param name="offset_size"></param>
+		/// <param name="length_pub"></param>
+		/// <param name="version"></param>
+		/// <param name="header_info_offset"></param>
+		/// <param name="info_length"></param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_globals_header(
+			IntPtr global,
+			out ulong offset_pub_header,
+			out ulong offset_size,
+			out ulong length_pub,
+			out ulong version,
+			out ulong header_info_offset,
+			out ulong info_length,
+			out IntPtr error 
+		);
+
+		/// <summary>
+		/// This is .debug_pubnames and is standard DWARF2, DWARF3, and DWARF4.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="globals">
+		/// A pointer to a list of Dwarf_Global descriptors, one for each of the pubnames
+		/// in the .debug_pubnames section. The returned results are for the entire section.
+		/// <br/>
+		/// Global names refer exclusively to names and offsets in the .debug_info section.
+		/// See section 6.1.1 "Lookup by Name" in the dwarf standard.
+		/// <br/>
+		/// Actual type: out IntPtr[] / Dwarf_Global**
+		/// <br/>
+		/// Freed by <see cref="dwarf_globals_dealloc"/>
+		/// </param>
+		/// <param name="return_count">
+		/// The count of pubnames represented in the section containing pubnames i.e. .debug_pubnames
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> of the .debug_pubnames section does not exist
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_globals(
+			IntPtr dbg,
+			out IntPtr globals,
+			out long return_count,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="global"></param>
+		/// <param name="return_name">
+		/// The pubname represented by the Dwarf_Global descriptor <paramref name="global"/>
+		/// <br/>
+		/// Should be freed using <see cref="dwarf_dealloc"/>,
+		/// with the allocation type <see cref="DW_DLA_STRING"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// <br/>
+		/// never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_globname(
+			IntPtr global,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string return_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="global"></param>
+		/// <param name="return_offset">
+		/// the offset in the section containing DIEs, i.e. .debug_info, of the DIE representing
+		/// the pubname that is described by the Dwarf_Global descriptor, <paramref name="glob"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// <br/>
+		/// never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_global_die_offset(
+			IntPtr global,
+			out ulong return_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="global"></param>
+		/// <param name="return_offset">
+		/// The offset in the section containing DIEs, i.e. .debug_info, of the compilation-unit
+		/// header of the compilation-unit that contains the pubname described by the
+		/// Dwarf_Global descriptor, <paramref name="glob"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// <br/>
+		/// never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_global_cu_offset(
+			IntPtr global,
+			out ulong return_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// This effectively turns a compilation-unit-header offset into a compilation-unit DIE offset
+		/// (by adding the size of the applicable CU header). This function is also sometimes useful
+		/// with the <see cref="dwarf_weak_cu_offset"/>, <see cref="dwarf_func_cu_offset"/>,
+		/// <see cref="dwarf_type_cu_offset"/>, and int <see cref="dwarf_var_cu_offset"/> functions,
+		/// though for those functions the data is only in .debug_info by definition
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="in_cu_header_offset"></param>
+		/// <param name="is_info">
+		/// If non-zero, the <paramref name="in_cu_header_offset"/> must refer to a .debug_info 
+		/// section offset. If zero, the <paramref name="in_cu_header_offset"/> must refer to a 
+		/// .debug_types section offset.
+		/// Chaos may result if the flag is incorrect.
+		/// </param>
+		/// <param name="out_cu_die_offset">
+		/// the offset of the compilation-unit DIE given the offset
+		/// <paramref name="in_cu_header_offset"/> of a compilation-unit header.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// <br/>
+		/// never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_cu_die_offset_given_cu_header_offset_b(
+			IntPtr dbg,
+			ulong in_cu_header_offset,
+			int is_info,
+			out ulong out_cu_die_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// If a portion of .debug_pubnames ( or .debug_types etc) represents a compilation unit with
+		/// no names there is a .debug_pubnames header there with no content. In that case a single
+		/// Dwarf_Global record is created with the value of *die_offset zero and the name-pointer
+		/// returned points to the empty string. A zero is never a valid DIE offset, so zero always
+		/// means this is an uninteresting (Dwarf_Global).
+		/// </summary>
+		/// <param name="global"></param>
+		/// <param name="return_name">
+		/// The name of the pubname described by the Dwarf_Global descriptor <paramref name="global"/>
+		/// <br/>
+		/// Freed using <see cref="dwarf_dealloc"/>,
+		/// with the allocation type <see cref="DW_DLA_STRING"/>
+		/// </param>
+		/// <param name="die_offset">
+		/// The global offset of the DIE representing the pubname
+		/// </param>
+		/// <param name="cu_die_offset">
+		/// The offset of the DIE representing the compilation-unit containing the pubname
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// <br/>
+		/// never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_global_name_offsets(
+			IntPtr global,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string return_name,
+			out ulong die_offset,
+			out ulong cu_die_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The returned results are for the entire section
+		/// <br/>
+		/// Global type names refer exclusively to names and offsets in the .debug_info section.
+		/// See section 6.1.1 "Lookup by Name" in the dwarf standard.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="types">
+		/// A pointer to a list of Dwarf_Type descriptors, one for each of the user-defined type
+		/// names in the .debug_pubtypes section
+		/// <br/>
+		/// Actual type: out IntPtr[] / Dwarf_Type[]* 
+		/// <br/>
+		/// Should be freed using <see cref="dwarf_types_dealloc"/>
+		/// </param>
+		/// <param name="typecount">
+		/// The count of user-defined type names represented in the section containing user-defined
+		/// type names, i.e. .debug_pubtypes
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success.
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if the .debug_pubtypes section does not exist.
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_pubtypes(
+			IntPtr dbg,
+			out IntPtr types,
+			out long typecount,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="type">
+		/// A Dwarf_Type descriptor describing a user-defined type
+		/// </param>
+		/// <param name="returned_name">
+		/// The name of the user-defined type described by the <paramref name="type"/>
+		/// <br/>
+		/// Should be freed using <see cref="dwarf_dealloc"/>,
+		/// with the allocation type <see cref="DW_DLA_STRING"/>
+		/// </param>
+		/// <param name="die_offset">
+		/// The offset of the DIE representing the <paramref name="type"/>
+		/// </param>
+		/// <param name="cu_offset">
+		/// The offset of the DIE representing the compilation-unit containing the user-defined type 
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> on error
+		/// <br/>
+		/// Never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_pubtype_name_offsets(
+			IntPtr type,
+			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string returned_name,
+			out ulong die_offset,
+			out ulong cu_offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allocates an opaque data structure used in all the other debugnames calls.
+		/// <br/>
+		/// Many of the function calls here let one extract the entire content of the section,
+		/// which is useful if one wishes to dump the section or to use its data to create one’s
+		/// own internal data structures.
+		/// </summary>
+		/// <param name="dbg"></param>
+		/// <param name="dn_out">
+		/// A pointer to the Head structure,
+		/// <br/>
+		/// Freed using <see cref="dwarf_dealloc"/>
+		/// with allocation type <see cref="DW_DLA_DNAMES_HEAD"/>
+		/// </param>
+		/// <param name="dn_index_count_out">
+		/// The count of debugnames entry in the debugnames index
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_OK"/> on success
+		/// <br/>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if there is no .debug_names section
+		/// <br/>
+		/// <see cref="DW_DLV_ERROR"/> if there is an internal error
+		/// such as data corruption in the section
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_header(
+			IntPtr dbg,
+			out IntPtr dn_out,
+			out ulong dn_index_count_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows access to fields a .debug_names DWARF5 header record
+		/// </summary>
+		/// <param name="dn">a properly created head</param>
+		/// <param name="index_number"></param>
+		/// <param name="section_offsets"></param>
+		/// <param name="version">
+		/// A version number (equals 5). This number is specific to the name index table
+		/// and is independent of the DWARF version number.
+		/// </param>
+		/// <param name="offset_size">
+		/// </param>
+		/// <param name="comp_unit_count">
+		/// The number of CUs in the CU list
+		/// </param>
+		/// <param name="local_type_unit_count">
+		/// The number of TUs in the local TU list
+		/// </param>
+		/// <param name="foreign_type_unit_count">
+		/// The number of TUs in the foreign TU list
+		/// </param>
+		/// <param name="bucket_count">
+		/// The number of hash buckets in the hash lookup table.
+		/// If there is no hash lookup table, this field contains 0
+		/// </param>
+		/// <param name="name_count">
+		/// The number of unique names in the index
+		/// </param>
+		/// <param name="indextable_overall_length">
+		/// 
+		/// </param>
+		/// <param name="abbrev_table_size">
+		/// The size in bytes of the abbreviations table
+		/// </param>
+		/// <param name="entry_pool_size">
+		/// 
+		/// </param>
+		/// <param name="augmentation_string_size">
+		/// The size in bytes of the augmentation string.
+		/// This value is rounded up to a multiple of 4
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_sizes(
+			IntPtr dn,
+			ulong index_number,
+			out ulong section_offsets,
+			out ulong version,
+			out ulong offset_size,
+
+			out ulong comp_unit_count,
+			out ulong local_type_unit_count,
+			out ulong foreign_type_unit_count,
+			out ulong bucket_count,
+			out ulong name_count,
+
+			out ulong indextable_overall_length,
+			out ulong abbrev_table_size,
+			out ulong entry_pool_size,
+			out ulong augmentation_string_size,
+
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows access to fields in cu entry <paramref name="index_number"/> from
+		/// a .debug_names DWARF5 Compilation Unit entry.
+		/// </summary>
+		/// <param name="dn">A properly created head</param>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_cu_entry(
+			IntPtr dn,
+			ulong index_number,
+			ulong offset_number,
+			out ulong offset_count,
+			out ulong offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// The same as dwarf_debugnames_cu_entry() but referencing type unit fields
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_local_tu_entry(
+			IntPtr dn,
+			ulong index_number,
+			ulong offset_number,
+			out ulong offset_count,
+			out ulong offset,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving the data for foreign type-unit entries
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_foreign_tu_entry(
+			IntPtr dn,
+			ulong index_number,
+			ulong sig_number,
+			out ulong sig_minimum,
+			out ulong sig_count,
+			out ulong signature,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving the data for hash buckets
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_bucket(
+			IntPtr dn,
+			ulong index_number,
+			ulong bucket_number,
+			out ulong bucket_count,
+			out ulong index_of_name_entry,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving the data about names and signatures
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_name(
+			IntPtr dn,
+			ulong index_number,
+			ulong name_entry,
+			out ulong names_count,
+			out ulong signature,
+			out ulong offset_to_debug_str,
+			out ulong offset_in_entrypool,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving the abbreviations from a portion of the section by index
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_abbrev_by_index(
+			IntPtr dn,
+			ulong index_number,
+			ulong abbrev_entry,
+			out ulong abbrev_code,
+			out ulong tag,
+			out ulong number_of_abbrev,
+			out ulong number_of_attr_form_entries,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving the abbreviations from a portion of the section by abbrev-code
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_abbrev_by_code(
+			IntPtr dn,
+			ulong index_nubmer,
+			ulong abbrev_code,
+			out ulong tag,
+			out ulong index_of_abbrev,
+			out ulong index_of_attr_form_entries,
+			out IntPtr error
+		);
+
+		static int _____;
+	#endregion //Accelerated Access By Name operations (6.16)
 
 #endregion
 	}
