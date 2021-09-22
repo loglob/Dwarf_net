@@ -1,6 +1,8 @@
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using static Dwarf_net.Defines;
+using static Dwarf_net.Util;
 
 namespace Dwarf_net
 {
@@ -9,7 +11,10 @@ namespace Dwarf_net
 	/// </summary>
 	public class Attribute
 	{
-		delegate int getter<T>(IntPtr attr, out T ret, out IntPtr err);
+		private delegate int discr_entry<T>(IntPtr head, ulong index,
+			out ushort type, out T low, out T high, out IntPtr error);
+
+		private delegate int hGetter<T>(IntPtr attr, out T ret, out IntPtr error);
 
 #region Fields
 		/// <summary>
@@ -22,7 +27,7 @@ namespace Dwarf_net
 		/// Mainly used to implicitely force GC order
 		/// </summary>
 		internal Die die;
-		#endregion
+#endregion
 
 #region Properties
 		/// <summary>
@@ -107,17 +112,6 @@ namespace Dwarf_net
 			=> wrapGetter<long>(Wrapper.dwarf_formsdata, "dwarf_formsdata");
 
 		/// <summary>
-		/// The Dwarf_Block represented by this attribute.
-		/// <br/>
-		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the class
-		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_BLOCK"/>
-		/// </summary>
-		public Block Block
-		// Don't free the address because I'm not sure about the lifetime of the referenced buffer
-			=> Marshal.PtrToStructure<Block>(
-				wrapGetter<IntPtr>(Wrapper.dwarf_formblock, "dwarf_formblock"));
-
-		/// <summary>
 		/// The string represented by this attribute.
 		/// <br/>
 		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the class
@@ -147,6 +141,50 @@ namespace Dwarf_net
 					=> Wrapper.dwarf_formexprloc(h, out val.l, out val.b, out error),
 				"dwarf_formexprloc");
 
+		/// <summary>
+		/// Reads the unsigned discriminants of this
+		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_BLOCK"/> class attribute.
+		/// </summary>
+		public (ushort type, ulong low, ulong high)[] UnsignedDiscriminants
+			=> discriminants<ulong>(Wrapper.dwarf_discr_entry_u, "dwarf_discr_entry_u");
+
+		/// <summary>
+		/// Reads the signed discriminants of this
+		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_BLOCK"/> class attribute.
+		/// </summary>
+		public (ushort type, long low, long high)[] SignedDiscriminants
+			=> discriminants<long>(Wrapper.dwarf_discr_entry_s, "dwarf_discr_entry_s");
+
+		/// <summary>
+		/// The form code of this attribute
+		/// <br/>
+		/// An attribute using <see cref="DW_FORM_indirect"/> effectively has two forms.
+		/// This is the 'final' form for <see cref="DW_FORM_indirect"/>, not the
+		/// <see cref="DW_FORM_indirect"/> itself.
+		/// This is what most applications will want
+		/// </summary>
+		public ushort Form
+			=> wrapGetter<ushort>(Wrapper.dwarf_whatform, "dwarf_whatform");
+
+		/// <summary>
+		/// Like <see cref="Attribute.Form"/>, but returns <see cref="DW_FORM_indirect"/>
+		/// instead of determining the 'final' form
+		/// </summary>
+		public ushort DirectForm
+			=> wrapGetter<ushort>(Wrapper.dwarf_whatform_direct, "dwarf_whatform_direct");
+
+		/// <summary>
+		/// Determines the form class of this attribute
+		/// </summary>
+		public Dwarf_Form_Class FormClass
+		{
+			get
+			{
+				var v = die.Version;
+				return Wrapper.dwarf_get_form_class(v.Version, Number, v.OffsetSize, Form);
+			}
+		}
+
 #endregion
 
 		internal Attribute(Die die, IntPtr handle)
@@ -155,19 +193,37 @@ namespace Dwarf_net
 		~Attribute()
 			=> Wrapper.dwarf_dealloc_attribute(handle);
 		
-		private T wrapGetter<T>(getter<T> f, string name)
+		private T wrapGetter<T>(hGetter<T> f, string name)
+			=> Util.wrapGetter((out T val, out IntPtr error) => f(handle, out val, out error), name);
+	
+		private (ushort, T, T)[] discriminants<T>(discr_entry<T> e, string name)
 		{
-			switch(f(handle, out T val, out IntPtr error))
+			var bp = wrapGetter<IntPtr>(Wrapper.dwarf_formblock, "dwarf_formblock");
+			var b = Marshal.PtrToStructure<Wrapper.Block>(bp);
+
+			if(!Util.wrapGetter(
+				(out (IntPtr h, ulong l) v, out IntPtr error)
+					=> Wrapper.dwarf_discr_list(die.debug.handle, b.bl_data, b.bl_len,
+						out v.h, out v.l, out error),
+					"dwarf_discr_list",
+					out (IntPtr head, ulong len) dl, true))
 			{
-				case DW_DLV_OK:
-					return val;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn(name);
+				Wrapper.dwarf_dealloc(die.debug.handle, bp, DW_DLA_BLOCK);	
+				return new (ushort, T, T)[0];
 			}
+	
+			var r = Naturals.Select(i
+				=> Util.wrapGetter(
+					(out (ushort t, T l, T h) v, out IntPtr err)
+						=> e(dl.head, (uint)i, out v.t, out v.l, out v.h, out err),
+					name))
+				.ToArray((int)dl.len);
+
+			Wrapper.dwarf_dealloc(die.debug.handle, bp, DW_DLA_BLOCK);	
+			Wrapper.dwarf_dealloc(die.debug.handle, dl.head, DW_DLA_DSC_HEAD);
+
+			return r;
 		}
+
 	}
 }

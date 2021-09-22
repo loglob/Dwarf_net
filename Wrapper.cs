@@ -5,28 +5,6 @@ using static Dwarf_net.Defines;
 namespace Dwarf_net
 {
 	/// <summary>
-	/// The Dwarf_Block type is used to contain the value of an attribute whose form is either
-	/// <see cref="DW_FORM_block1"/>, <see cref="DW_FORM_block2"/>, <see cref="DW_FORM_block4"/>,
-	/// <see cref="DW_FORM_block8"/>, or <see cref="DW_FORM_block"/>.
-	/// Its intended use is to deliver the value for an attribute of any of these forms.
-	/// </summary>
-	[StructLayout(LayoutKind.Sequential)]
-	public struct Block
-	{
-		/// <summary>
-		/// The length in bytes of the data pointed to by the <paramref name="bl_data"/> field.
-		/// </summary>
-		ulong bl_len;
-		/// <summary>
-		/// A pointer to the uninterpreted data.
-		/// The data pointed to is not necessarily at any useful alignment.
-		/// </summary>
-		IntPtr bl_data;
-		byte bl_from_loclist;
-		ulong bl_section_offset;
-	}
-
-	/// <summary>
 	/// Wrapper around native libdwarf
 	/// </summary>
 	static internal class Wrapper
@@ -46,6 +24,28 @@ namespace Dwarf_net
 			/// </summary>
 			int check_verbose_mode;
 		};
+
+		/// <summary>
+		/// The Dwarf_Block type is used to contain the value of an attribute whose form is either
+		/// <see cref="DW_FORM_block1"/>, <see cref="DW_FORM_block2"/>, <see cref="DW_FORM_block4"/>,
+		/// <see cref="DW_FORM_block8"/>, or <see cref="DW_FORM_block"/>.
+		/// Its intended use is to deliver the value for an attribute of any of these forms.
+		/// </summary>
+		[StructLayout(LayoutKind.Sequential)]
+		public struct Block
+		{
+			/// <summary>
+			/// The length in bytes of the data pointed to by the <paramref name="bl_data"/> field.
+			/// </summary>
+			public ulong bl_len;
+			/// <summary>
+			/// A pointer to the uninterpreted data.
+			/// The data pointed to is not necessarily at any useful alignment.
+			/// </summary>
+			public IntPtr bl_data;
+			public byte bl_from_loclist;
+			public ulong bl_section_offset;
+		}
 
 		[StructLayout(LayoutKind.Sequential)]
 		public struct Form_Data16
