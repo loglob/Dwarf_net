@@ -3649,6 +3649,23 @@ namespace Dwarf_net
 		static int _____;
 	#endregion //Accelerated Access By Name operations (6.16)
 
+	#region Utility Operations (6.36)
+
+		/// <summary>
+		/// Finds the error number of an error pointer
+		/// </summary>
+		[DllImport(lib)]
+		public static extern ulong dwarf_errno(IntPtr error); 
+
+		/// <summary>
+		/// Retrieves the string representation of an error pointer
+		/// </summary>
+		[DllImport(lib)]
+		[return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]		
+		public static extern string dwarf_errmsg(IntPtr error);
+
+	#endregion
+
 #endregion
 	}
 }

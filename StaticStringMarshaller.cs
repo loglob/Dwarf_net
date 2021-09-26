@@ -3,6 +3,9 @@
 using System;
 using System.Runtime.InteropServices;
 
+/// <summary>
+/// A marshaler that accepts native strings without freeing the passed memory
+/// </summary>
 class StaticStringMarshaler : ICustomMarshaler
 {
 	private static readonly StaticStringMarshaler instance = new StaticStringMarshaler();
