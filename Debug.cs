@@ -177,12 +177,13 @@ namespace Dwarf_net
 
 #region Properties
 		/// <summary>
-		/// The Offset of the current Compilation Unit selected with <see cref="NextUnit"/>
+		/// The Offset of the next Compilation Unit to be selected with <see cref="NextUnit"/>
 		/// </summary>
-		public ulong UnitOffset { get; private set; } = 0;
+		public ulong NextUnitOffset { get; private set; } = 0;
 
 		/// <summary>
-		/// The DIEs of the .debug_info section.
+		/// The DIEs of the .debug_info section in the current Compilation Unit
+		/// (Selected with <see cref="NextUnit"/>)
 		/// <br/>
 		/// The first DIE has the <see cref="DW_TAG_compile_unit"/>,
 		/// <see cref="DW_TAG_partial_unit"/>, or <see cref="DW_TAG_type_unit"/> tag.
@@ -191,13 +192,27 @@ namespace Dwarf_net
 			=> getDies(true);
 
 		/// <summary>
-		/// The DIEs of the .debug_types section.
+		/// The DIEs of the .debug_types section in the current Compilation Unit
+		/// (Selected with <see cref="NextUnit"/>)
 		/// <br/>
 		/// The first DIE has the <see cref="DW_TAG_compile_unit"/>,
 		/// <see cref="DW_TAG_partial_unit"/>, or <see cref="DW_TAG_type_unit"/> tag.
 		/// </summary>
 		public IEnumerable<Die> TypesDies
 			=> getDies(false);
+
+		/// <summary>
+		/// All DIEs of the .debug_info sections of all Compilation Units
+		/// </summary>
+		public List<Die> AllInfoDies
+			=> getAllDies(true);
+
+		/// <summary>
+		/// All DIEs of the .debug_types sections of all Compilation Units
+		/// </summary>
+		public List<Die> AllTypesDies
+			=> getAllDies(false);
+
 #endregion
 
 #region Constructors
@@ -318,6 +333,35 @@ namespace Dwarf_net
 		}
 
 		/// <summary>
+		/// Similar to getDies(), but iterates through all
+		/// Compilation Units to find all available DIEs
+		/// </summary>
+		/// <param name="isInfo">
+		/// Whether to search .debug_info or .debug_types
+		/// </param>
+		/// <returns>
+		/// A list of all top-level DIEs in the given section
+		/// </returns>
+		private List<Die> getAllDies(bool isInfo)
+		{
+			var co = NextUnitOffset;
+			var dies = new List<Die>();
+
+			if(co == 0)
+				NextUnit(isInfo);
+
+			do
+			{
+				foreach(var die in getDies(isInfo))
+					dies.Add(die);
+
+				NextUnit(isInfo);
+			} while (NextUnitOffset != co);
+
+			return dies;
+		}
+
+		/// <summary>
 		/// Moves the state of this Debug to the next Compilation Unit
 		/// </summary>
 		/// <param name="isInfo">Whether to search .debug_info or .debug_types for CU headers</param>
@@ -340,12 +384,12 @@ namespace Dwarf_net
 			))
 			{
 				case DW_DLV_NO_ENTRY:
-					UnitOffset = 0;
+					NextUnitOffset = 0;
 					return null;
 
 				case DW_DLV_OK:
-					ulong o = UnitOffset;
-					UnitOffset = nextOffset;
+					ulong o = NextUnitOffset;
+					NextUnitOffset = nextOffset;
 
 					return new CompilationUnitHeader(
 						headerLength,
