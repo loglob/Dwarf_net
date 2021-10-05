@@ -325,6 +325,10 @@ namespace Dwarf_net
 					return Enumerable.Empty<Die>();
 
 				case DW_DLV_ERROR:
+					if(error == IntPtr.Zero && NextUnitOffset == 0)
+						throw new InvalidOperationException(
+						"You need to set the current Compilation Unit using Debug.NextUnit(), "
+						+ "or use AllInfoDies/AllTypesDies to access DIEs!");
 					throw DwarfException.Wrap(error);
 
 				default:
