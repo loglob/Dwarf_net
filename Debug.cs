@@ -43,7 +43,7 @@ namespace Dwarf_net
 		public readonly struct CompilationUnitHeader
 		{
 			/// <summary>
-			/// The offset in the .debug_info section of this CU Header 
+			/// The offset in the .debug_info section of this CU Header
 			/// </summary>
 			public readonly ulong Offset;
 
@@ -51,7 +51,7 @@ namespace Dwarf_net
 			/// The length in bytes of the compilation unit header
 			/// </summary>
 			public readonly ulong Length;
-			
+
 			/// <summary>
 			/// The section version, which would be (for .debug_info)
 			/// 2 for DWARF2, 3 for DWARF3, 4 for DWARF4, or 5 for DWARF5
@@ -188,6 +188,24 @@ namespace Dwarf_net
 		/// </summary>
 		public CompilationUnitHeader[] TypeUnits
 			=> headers(false).ToArray();
+
+		/// <summary>
+		/// The DIEs of the .debug_info section.
+		/// <br/>
+		/// The first DIE has the <see cref="DW_TAG_compile_unit"/>,
+		/// <see cref="DW_TAG_partial_unit"/>, or <see cref="DW_TAG_type_unit"/> tag.
+		/// </summary>
+		public IEnumerable<Die> InfoDies
+			=> getDies(true);
+
+		/// <summary>
+		/// The DIEs of the .debug_types section.
+		/// <br/>
+		/// The first DIE has the <see cref="DW_TAG_compile_unit"/>,
+		/// <see cref="DW_TAG_partial_unit"/>, or <see cref="DW_TAG_type_unit"/> tag.
+		/// </summary>
+		public IEnumerable<Die> TypesDies
+			=> getDies(false);
 #endregion
 
 #region Constructors
@@ -279,6 +297,9 @@ namespace Dwarf_net
 		}
 
 #region Methods
+		/// <summary>
+		/// Retrieves compilation unit headers
+		/// </summary>
 		private IEnumerable<CompilationUnitHeader> headers(bool isInfo)
 		{
 			ulong offset = 0;
@@ -302,7 +323,7 @@ namespace Dwarf_net
 				{
 					case DW_DLV_NO_ENTRY:
 						yield break;
-					
+
 					case DW_DLV_OK:
 						yield return new CompilationUnitHeader(
 							headerLength,
@@ -325,6 +346,34 @@ namespace Dwarf_net
 					default:
 						throw DwarfException.BadReturn("dwarf_sec_group_map");
 				}
+			}
+		}
+
+		/// <summary>
+		/// Retrieves the Dies for .dwarf_info or .dwarf_types
+		/// <br/>
+		/// This die has the <see cref="DW_TAG_compile_unit"/>,
+		/// <see cref="DW_TAG_partial_unit"/>, or <see cref="DW_TAG_type_unit"/> tag.
+		/// </summary>
+		private IEnumerable<Die> getDies(bool isInfo)
+		{
+			switch(Wrapper.dwarf_siblingof_b(handle, IntPtr.Zero, isInfo ? 1 : 0,
+				out IntPtr die, out IntPtr error))
+			{
+				case DW_DLV_OK:
+				{
+					var d = new Die(this, die);
+					return d.Children.Prepend(d);
+				}
+
+				case DW_DLV_NO_ENTRY:
+					return Enumerable.Empty<Die>();
+
+				case DW_DLV_ERROR:
+					throw DwarfException.Wrap(error);
+
+				default:
+					throw DwarfException.BadReturn("dwarf_siblingof_b");
 			}
 		}
 #endregion
