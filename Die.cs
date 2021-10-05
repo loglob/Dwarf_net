@@ -28,31 +28,6 @@ namespace Dwarf_net
 #region Properties
 
 		/// <summary>
-		/// The first child of the DIE.
-		/// null is this DIE has no children.
-		/// </summary>
-		private Die child
-		{
-			get
-			{
-				switch (Wrapper.dwarf_child(handle, out IntPtr kid, out IntPtr error))
-				{
-					case DW_DLV_NO_ENTRY:
-						return null;
-
-					case DW_DLV_OK:
-						return new Die(debug, kid);
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_child");
-				}
-			}
-		}
-
-		/// <summary>
 		/// If true, this die originated from the .debug_info section.
 		/// <br/>
 		/// If false, this die originated from the .debug_types section.
@@ -72,7 +47,7 @@ namespace Dwarf_net
 				for (IntPtr cur = handle; ;)
 				{
 					int code;
-					switch (code = Wrapper.dwarf_siblingof_b(debug.handle, handle, isInfo,
+					switch (code = Wrapper.dwarf_siblingof_b(debug.handle, cur, isInfo,
 						out cur, out IntPtr error))
 					{
 						case DW_DLV_NO_ENTRY:
@@ -99,14 +74,21 @@ namespace Dwarf_net
 		{
 			get
 			{
-				var c = child;
-
-				if(!(c is null))
+				int code;
+				switch (code = Wrapper.dwarf_child(handle, out IntPtr kid, out IntPtr error))
 				{
-					yield return c;
+					case DW_DLV_NO_ENTRY:
+						return Enumerable.Empty<Die>();
 
-					foreach (var s in c.Siblings)
-						yield return s;
+					case DW_DLV_OK:
+						var child = new Die(debug, kid);
+						return child.Siblings.Prepend(child);
+
+					case DW_DLV_ERROR:
+						throw DwarfException.Wrap(error);
+
+					default:
+						throw DwarfException.BadReturn("dwarf_child", code);
 				}
 			}
 		}
