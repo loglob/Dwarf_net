@@ -133,7 +133,6 @@ namespace Dwarf_net
 #endregion
 
 #region Fields
-
 		/// <summary>
 		/// The handle returned from dwarf_init_*
 		/// </summary>
@@ -178,16 +177,9 @@ namespace Dwarf_net
 
 #region Properties
 		/// <summary>
-		/// The compilation units from the .debug_info section
+		/// The Offset of the current Compilation Unit selected with <see cref="NextUnit"/>
 		/// </summary>
-		public CompilationUnitHeader[] InfoUnits
-			=> headers(true).ToArray();
-
-		/// <summary>
-		/// The compilation units from the .debug_types section
-		/// </summary>
-		public CompilationUnitHeader[] TypeUnits
-			=> headers(false).ToArray();
+		public ulong UnitOffset { get; private set; } = 0;
 
 		/// <summary>
 		/// The DIEs of the .debug_info section.
@@ -298,58 +290,6 @@ namespace Dwarf_net
 
 #region Methods
 		/// <summary>
-		/// Retrieves compilation unit headers
-		/// </summary>
-		private IEnumerable<CompilationUnitHeader> headers(bool isInfo)
-		{
-			ulong offset = 0;
-
-			for (;;)
-			{
-				switch(Wrapper.dwarf_next_cu_header_d(
-					handle, isInfo ? 1 : 0,
-					out ulong headerLength,
-					out ushort versionStamp,
-					out ulong abbrevOffset,
-					out ushort addressSize,
-					out ushort offsetSize,
-					out ushort extensionSize,
-					out ulong signature,
-					out ulong typeOffset,
-					out ulong nextOffset,
-					out ushort headerType,
-					out IntPtr error
-				))
-				{
-					case DW_DLV_NO_ENTRY:
-						yield break;
-
-					case DW_DLV_OK:
-						yield return new CompilationUnitHeader(
-							headerLength,
-							versionStamp,
-							abbrevOffset,
-							addressSize,
-							offsetSize,
-							extensionSize,
-							typeOffset,
-							headerType,
-							offset
-						);
-
-						offset = nextOffset;
-					break;
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_sec_group_map");
-				}
-			}
-		}
-
-		/// <summary>
 		/// Retrieves the Dies for .dwarf_info or .dwarf_types
 		/// <br/>
 		/// This die has the <see cref="DW_TAG_compile_unit"/>,
@@ -363,7 +303,7 @@ namespace Dwarf_net
 				case DW_DLV_OK:
 				{
 					var d = new Die(this, die);
-					return d.Children.Prepend(d);
+					return d.Siblings.Prepend(d);
 				}
 
 				case DW_DLV_NO_ENTRY:
@@ -376,6 +316,57 @@ namespace Dwarf_net
 					throw DwarfException.BadReturn("dwarf_siblingof_b");
 			}
 		}
+
+		/// <summary>
+		/// Moves the state of this Debug to the next Compilation Unit
+		/// </summary>
+		/// <param name="isInfo">Whether to search .debug_info or .debug_types for CU headers</param>
+		/// <returns>THe CU header of the new compilation unit, or null if the last compilation unit was reached</returns>
+		public CompilationUnitHeader? NextUnit(bool isInfo)
+		{
+			switch(Wrapper.dwarf_next_cu_header_d(
+				handle, isInfo ? 1 : 0,
+				out ulong headerLength,
+				out ushort versionStamp,
+				out ulong abbrevOffset,
+				out ushort addressSize,
+				out ushort offsetSize,
+				out ushort extensionSize,
+				out ulong signature,
+				out ulong typeOffset,
+				out ulong nextOffset,
+				out ushort headerType,
+				out IntPtr error
+			))
+			{
+				case DW_DLV_NO_ENTRY:
+					UnitOffset = 0;
+					return null;
+
+				case DW_DLV_OK:
+					ulong o = UnitOffset;
+					UnitOffset = nextOffset;
+
+					return new CompilationUnitHeader(
+						headerLength,
+						versionStamp,
+						abbrevOffset,
+						addressSize,
+						offsetSize,
+						extensionSize,
+						typeOffset,
+						headerType,
+						o
+					);
+
+				case DW_DLV_ERROR:
+					throw DwarfException.Wrap(error);
+
+				default:
+					throw DwarfException.BadReturn("dwarf_sec_group_map");
+			}
+		}
+
 #endregion
 
 #region Static Helper Methods
