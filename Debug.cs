@@ -327,7 +327,7 @@ namespace Dwarf_net
 				case DW_DLV_ERROR:
 					if(error == IntPtr.Zero && NextUnitOffset == 0)
 						throw new InvalidOperationException(
-						"You need to set the current Compilation Unit using Debug.NextUnit(), "
+						"You need to set the current Compilation Unit using NextUnit(), "
 						+ "or use AllInfoDies/AllTypesDies to access DIEs!");
 					throw DwarfException.Wrap(error);
 
@@ -353,14 +353,16 @@ namespace Dwarf_net
 
 			if(co == 0)
 				NextUnit(isInfo);
-
-			do
+			if(co != 0)
 			{
-				foreach(var die in getDies(isInfo))
-					dies.Add(die);
+				do
+				{
+					foreach(var die in getDies(isInfo))
+						dies.Add(die);
 
-				NextUnit(isInfo);
-			} while (NextUnitOffset != co);
+					NextUnit(isInfo);
+				} while (NextUnitOffset != co);
+			}
 
 			return dies;
 		}
