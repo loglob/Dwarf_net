@@ -71,7 +71,8 @@ namespace Dwarf_net
 
 				for (IntPtr cur = handle; ;)
 				{
-					switch (Wrapper.dwarf_siblingof_b(debug.handle, handle, isInfo,
+					int code;
+					switch (code = Wrapper.dwarf_siblingof_b(debug.handle, handle, isInfo,
 						out cur, out IntPtr error))
 					{
 						case DW_DLV_NO_ENTRY:
@@ -79,13 +80,13 @@ namespace Dwarf_net
 
 						case DW_DLV_OK:
 							yield return new Die(debug, cur);
-							break;
+						break;
 
 						case DW_DLV_ERROR:
 							throw DwarfException.Wrap(error);
 
 						default:
-							throw DwarfException.BadReturn("dwarf_siblingof_b");
+							throw DwarfException.BadReturn("dwarf_siblingof_b", code);
 					}
 				}
 			}
@@ -110,6 +111,9 @@ namespace Dwarf_net
 			}
 		}
 
+		/// <summary>
+		/// The tag of this DIE
+		/// </summary>
 		public ushort Tag
 		{
 			get
@@ -212,7 +216,9 @@ namespace Dwarf_net
 		{
 			get
 			{
-				switch(Wrapper.dwarf_attrlist(handle,
+				int code;
+
+				switch(code = Wrapper.dwarf_attrlist(handle,
 					out IntPtr buf, out long count, out IntPtr error))
 				{
 					case DW_DLV_OK:
@@ -231,7 +237,7 @@ namespace Dwarf_net
 						throw DwarfException.Wrap(error);
 
 					default:
-						throw DwarfException.BadReturn("dwarf_attrlist");
+						throw DwarfException.BadReturn("dwarf_attrlist", code);
 				}
 			}
 		}
@@ -283,8 +289,9 @@ namespace Dwarf_net
 		public Die(Debug debug, ulong offset, bool isInfo = true)
 		{
 			this.debug = debug;
+			int code;
 
-			switch(Wrapper.dwarf_offdie_b(debug.handle, offset, isInfo ? 1 : 0,
+			switch(code = Wrapper.dwarf_offdie_b(debug.handle, offset, isInfo ? 1 : 0,
 				out handle, out IntPtr error))
 			{
 				case DW_DLV_NO_ENTRY:
@@ -297,7 +304,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_offdie_b");
+					throw DwarfException.BadReturn("dwarf_offdie_b", code);
 			}
 		}
 #endregion
