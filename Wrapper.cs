@@ -2627,7 +2627,7 @@ namespace Dwarf_net
 	*/
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line_context"></param>
 		/// <param name="offset">
@@ -2650,7 +2650,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line_context"></param>
 		/// <param name="version">the line table version number</param>
@@ -2668,7 +2668,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line_context"></param>
 		/// <param name="compilation_directory">
@@ -2734,8 +2734,8 @@ namespace Dwarf_net
 		/// </param>
 		/// <param name="name"></param>
 		/// <param name="directory_index">
-		/// The unsigned directory index represents an entry in the directories field of 
-		/// the header. The index is 0 if the file was found in the current directory of the 
+		/// The unsigned directory index represents an entry in the directories field of
+		/// the header. The index is 0 if the file was found in the current directory of the
 		/// compilation (hence, the first directory in the directories field), 1 if it was
 		/// found in the second directory in the directories field, and so on
 		/// </param>
@@ -2743,7 +2743,7 @@ namespace Dwarf_net
 		/// <param name="file_length"></param>
 		/// <param name="md5_value">
 		/// A pointer to a Dwarf_Form_Data16 md5 value if the md5 value is present.
-		/// <see cref="IntPtr.Zero"/> otherwise to indicate there was no such field. 
+		/// <see cref="IntPtr.Zero"/> otherwise to indicate there was no such field.
 		/// <br/>
 		/// Actual type: out Form_Data16* / Dwarf_Form_Data16** / unsigned long[2]**
 		/// </param>
@@ -2767,7 +2767,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line_context"></param>
 		/// <param name="count">
@@ -2880,7 +2880,7 @@ namespace Dwarf_net
 	*/
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line">
 		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
@@ -2924,7 +2924,7 @@ namespace Dwarf_net
 		/// </param>
 		/// <param name="return_bool">
 		/// non-zero if <paramref name="line"/> represents a line number entry
-		/// that is marked as ending a text sequence, 
+		/// that is marked as ending a text sequence,
 		/// zero otherwise.
 		/// </param>
 		/// <param name="error"></param>
@@ -2941,7 +2941,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line">
 		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
@@ -2969,11 +2969,11 @@ namespace Dwarf_net
 		/// it means the file name is unknown (see the DWA RF2/3 line table specification).
 		/// <br/>
 		/// When the number returned through <paramref name="returned_fileno"/> is non-zero
-		/// it is a file number: subtract 1 from this file number to get an index into the array 
+		/// it is a file number: subtract 1 from this file number to get an index into the array
 		/// of strings returned by <see cref="dwarf_srcfiles"/> (verify the resulting index is in
 		/// range for the array of strings before indexing into the array of strings).
 		/// The file number may exceed the size of the array of strings returned by
-		/// <see cref="dwarf_srcfiles"/> because it does not return files names defined with the 
+		/// <see cref="dwarf_srcfiles"/> because it does not return files names defined with the
 		/// <see cref="DW_DLE_define_file"/> operator.
 		/// <br/>
 		/// DWARF5:
@@ -3001,7 +3001,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line">
 		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
@@ -3081,7 +3081,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// Determines 
+		/// Determines
 		/// </summary>
 		/// <param name="line">
 		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
@@ -3104,7 +3104,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="line">
 		/// A Dwarf_Line descriptor returned by <see cref="dwarf_srclines_b"/> or
@@ -3195,7 +3195,7 @@ namespace Dwarf_net
 			out ulong version,
 			out ulong header_info_offset,
 			out ulong info_length,
-			out IntPtr error 
+			out IntPtr error
 		);
 
 		/// <summary>
@@ -3231,7 +3231,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="global"></param>
 		/// <param name="return_name">
@@ -3257,7 +3257,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="global"></param>
 		/// <param name="return_offset">
@@ -3280,7 +3280,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="global"></param>
 		/// <param name="return_offset">
@@ -3313,8 +3313,8 @@ namespace Dwarf_net
 		/// <param name="dbg"></param>
 		/// <param name="in_cu_header_offset"></param>
 		/// <param name="is_info">
-		/// If non-zero, the <paramref name="in_cu_header_offset"/> must refer to a .debug_info 
-		/// section offset. If zero, the <paramref name="in_cu_header_offset"/> must refer to a 
+		/// If non-zero, the <paramref name="in_cu_header_offset"/> must refer to a .debug_info
+		/// section offset. If zero, the <paramref name="in_cu_header_offset"/> must refer to a
 		/// .debug_types section offset.
 		/// Chaos may result if the flag is incorrect.
 		/// </param>
@@ -3388,7 +3388,7 @@ namespace Dwarf_net
 		/// A pointer to a list of Dwarf_Type descriptors, one for each of the user-defined type
 		/// names in the .debug_pubtypes section
 		/// <br/>
-		/// Actual type: out IntPtr[] / Dwarf_Type[]* 
+		/// Actual type: out IntPtr[] / Dwarf_Type[]*
 		/// <br/>
 		/// Should be freed using <see cref="dwarf_types_dealloc"/>
 		/// </param>
@@ -3413,7 +3413,7 @@ namespace Dwarf_net
 		);
 
 		/// <summary>
-		/// 
+		///
 		/// </summary>
 		/// <param name="type">
 		/// A Dwarf_Type descriptor describing a user-defined type
@@ -3428,7 +3428,7 @@ namespace Dwarf_net
 		/// The offset of the DIE representing the <paramref name="type"/>
 		/// </param>
 		/// <param name="cu_offset">
-		/// The offset of the DIE representing the compilation-unit containing the user-defined type 
+		/// The offset of the DIE representing the compilation-unit containing the user-defined type
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
@@ -3511,13 +3511,13 @@ namespace Dwarf_net
 		/// The number of unique names in the index
 		/// </param>
 		/// <param name="indextable_overall_length">
-		/// 
+		///
 		/// </param>
 		/// <param name="abbrev_table_size">
 		/// The size in bytes of the abbreviations table
 		/// </param>
 		/// <param name="entry_pool_size">
-		/// 
+		///
 		/// </param>
 		/// <param name="augmentation_string_size">
 		/// The size in bytes of the augmentation string.
@@ -3645,8 +3645,6 @@ namespace Dwarf_net
 			out ulong index_of_attr_form_entries,
 			out IntPtr error
 		);
-
-		static int _____;
 	#endregion //Accelerated Access By Name operations (6.16)
 
 	#region Utility Operations (6.36)
@@ -3655,13 +3653,13 @@ namespace Dwarf_net
 		/// Finds the error number of an error pointer
 		/// </summary>
 		[DllImport(lib)]
-		public static extern ulong dwarf_errno(IntPtr error); 
+		public static extern ulong dwarf_errno(IntPtr error);
 
 		/// <summary>
 		/// Retrieves the string representation of an error pointer
 		/// </summary>
 		[DllImport(lib)]
-		[return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]		
+		[return: MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
 		public static extern string dwarf_errmsg(IntPtr error);
 
 	#endregion
