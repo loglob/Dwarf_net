@@ -61,16 +61,17 @@ namespace Dwarf_net
 				case DW_DLE_MDE:
 					return new MangledDebuggingEntry(error, msg);
 
-				return new 
-
 				case DW_DLE_NOB:
 				// File is not an object file
 					return new FormatException(msg);
 
+				default:
+					return new DwarfException(error, msg);
 			}
-
-			return new DwarfException(error, msg);
 		}
+
+		public static DwarfException BadReturn(string func, int code)
+			=> new DwarfException($"Unexpected return code from {func}(): {code}");
 
 		public static DwarfException BadReturn(string func)
 			=> new DwarfException($"Unexpected return code from {func}()");
