@@ -161,7 +161,7 @@ namespace Dwarf_net
 		}
 
 		/// <summary>
-		/// The name of this DIE, represented by the name attribute (<see cref="DW_AT_name"/>)
+		/// The name of this DIE, represented by the name attribute (<see cref="AttributeNumber.Name"/>)
 		/// <br/>
 		/// May be null is this DIE does not have a name attribute.
 		/// </summary>
@@ -324,12 +324,12 @@ namespace Dwarf_net
 		/// Determines if this DIE has the attribute <paramref name="number"/>
 		/// </summary>
 		/// <param name="number">
-		/// A DW_AT_* constant
+		/// An attribute number
 		/// </param>
-		public bool HasAttribute(ushort number)
+		public bool HasAttribute(AttributeNumber number)
 		{
 			int code;
-			switch(code = Wrapper.dwarf_hasattr(handle, number,
+			switch(code = Wrapper.dwarf_hasattr(handle, (ushort)number,
 				out int has, out IntPtr error))
 			{
 				case DW_DLV_OK:

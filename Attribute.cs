@@ -39,7 +39,7 @@ namespace Dwarf_net
 		/// <summary>
 		/// The address this attribute represents.
 		/// Throws a <see cref="DwarfException"/> if the Attribute
-		/// doesn't belong to the <see cref="Dwarf_Form_Class.DW_FORM_CLASS_ADDRESS"/> class 
+		/// doesn't belong to the <see cref="FormClass.Address"/> class 
 		/// </summary>
 		ulong Address
 			=> wrapGetter<ulong>(Wrapper.dwarf_formaddr, "dwarf_formaddr");
@@ -47,9 +47,9 @@ namespace Dwarf_net
 		/// <summary>
 		/// Determines the CU-relative offset represented by this Attribute
 		/// <br/>
-		/// The attribute must be of the <see cref="Dwarf_Form_Class.DW_FORM_CLASS_REFERENCE"/> class,
-		/// and be a CU-local reference, not of the form <see cref="DW_FORM_ref_addr"/>
-		/// or <see cref="DW_FORM_sec_offset"/>.
+		/// The attribute must be of the <see cref="FormClass.Reference"/> class,
+		/// and be a CU-local reference, not of the form <see cref="Form.RefAddr"/>
+		/// or <see cref="Form.SecOffset"/>.
 		/// <br/>
 		/// Otherwise, a <see cref="DwarfException"/> is thrown.
 		/// </summary>
@@ -59,11 +59,11 @@ namespace Dwarf_net
 		/// <summary>
 		/// Determines the section-relative offset represented by this attribute.
 		/// <br/>
-		/// It must belong to the <see cref="Dwarf_Form_Class.DW_FORM_CLASS_REFERENCE"/> class
-		/// or another section-referencing class (so <see cref="DW_FORM_ref_addr"/> or
-		/// <see cref="DW_FORM_sec_offset"/>)
+		/// It must belong to the <see cref="FormClass.Reference"/> class
+		/// or another section-referencing class (so <see cref="Form.RefAddr"/> or
+		/// <see cref="Form.SecOffset"/>)
 		/// <br/>
-		/// Converts CU relative offsets from forms such as <see cref="DW_FORM_ref4"/>
+		/// Converts CU relative offsets from forms such as <see cref="Form.Ref4"/>
 		/// into global section offsets.
 		/// <br/>
 		/// Otherwise, a <see cref="DwarfException"/> is thrown.
@@ -74,8 +74,8 @@ namespace Dwarf_net
 		/// <summary>
 		/// The index which refers to an entry in the .debug_str_offsets section of this .dwo
 		/// <br/>
-		/// The attribute must have form <see cref="DW_FORM_strx"/>
-		/// or <see cref="DW_FORM_GNU_str_index">
+		/// The attribute must have form <see cref="Form.Strx"/>
+		/// or <see cref="Form.GnuStrIndex">
 		/// <br/>
 		/// If it has the wrong form, or there is no valid CU context,
 		/// throws a <see cref="DwarfException">
@@ -87,7 +87,7 @@ namespace Dwarf_net
 		/// The boolean flag value of this attribute.
 		/// <br/>
 		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the form
-		/// <see cref="Defines.DW_FORM_flag">
+		/// <see cref="Form.Flag">
 		/// </summary>
 		public bool Flag
 			=> wrapGetter<int>(Wrapper.dwarf_formflag, "dwarf_formflag") != 0;
@@ -96,7 +96,7 @@ namespace Dwarf_net
 		/// The unsigned constant represented by this attribute.
 		/// <br/>
 		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the class
-		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_CONSTANT"/>
+		/// <see cref="FormClass.Constant"/>
 		/// <br/>
 		/// For DWARF2 and DWARF3, <see cref="DW_FORM_data4"/> and <see cref="DW_FORM_data8"/>
 		/// are possibly class CONSTANT, and for DWARF4 and later they are definitely class CONSTANT.
@@ -115,7 +115,7 @@ namespace Dwarf_net
 		/// The string represented by this attribute.
 		/// <br/>
 		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the class
-		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_STRING"/>
+		/// <see cref="FormClass.String"/>
 		/// </summary>
 		public string String
 			=> wrapGetter<string>(Wrapper.dwarf_formstring, "dwarf_formstring");
@@ -125,7 +125,7 @@ namespace Dwarf_net
 		/// This form is used to refer to a type unit.
 		/// <br/>
 		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the form
-		/// <see cref="Defines.DW_FORM_ref_sig8"/>
+		/// <see cref="Form.RefSig8"/>
 		/// </summary>
 		public ulong Signature
 			=> wrapGetter<ulong>(Wrapper.dwarf_formsig8, "dwarf_formsig8");
@@ -134,7 +134,7 @@ namespace Dwarf_net
 		/// Returns the length and bytes of a location expression.
 		/// <br/>
 		/// Throws a <see cref="DwarfException"/> if the attribute isn't of the form
-		/// <see cref="Defines.DW_FORM_exprloc"/>
+		/// <see cref="Form.Exprloc"/>
 		/// </summary>
 		public (ulong length, IntPtr block) ExprLoc
 			=> wrapGetter<(ulong, IntPtr)>((IntPtr h, out (ulong l, IntPtr b) val, out IntPtr error)
@@ -143,14 +143,14 @@ namespace Dwarf_net
 
 		/// <summary>
 		/// Reads the unsigned discriminants of this
-		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_BLOCK"/> class attribute.
+		/// <see cref="FormClass.Block"/> class attribute.
 		/// </summary>
 		public (ushort type, ulong low, ulong high)[] UnsignedDiscriminants
 			=> discriminants<ulong>(Wrapper.dwarf_discr_entry_u, "dwarf_discr_entry_u");
 
 		/// <summary>
 		/// Reads the signed discriminants of this
-		/// <see cref="Dwarf_Form_Class.DW_FORM_CLASS_BLOCK"/> class attribute.
+		/// <see cref="FormClass.Block"/> class attribute.
 		/// </summary>
 		public (ushort type, long low, long high)[] SignedDiscriminants
 			=> discriminants<long>(Wrapper.dwarf_discr_entry_s, "dwarf_discr_entry_s");
@@ -158,16 +158,16 @@ namespace Dwarf_net
 		/// <summary>
 		/// The form code of this attribute
 		/// <br/>
-		/// An attribute using <see cref="DW_FORM_indirect"/> effectively has two forms.
-		/// This is the 'final' form for <see cref="DW_FORM_indirect"/>, not the
-		/// <see cref="DW_FORM_indirect"/> itself.
+		/// An attribute using <see cref="Form.Indirect"/> effectively has two forms.
+		/// This is the 'final' form for <see cref="Form.Indirect"/>, not the
+		/// <see cref="Form.Indirect"/> itself.
 		/// This is what most applications will want
 		/// </summary>
-		public ushort Form
-			=> wrapGetter<ushort>(Wrapper.dwarf_whatform, "dwarf_whatform");
+		public Form Form
+			=> (Form)wrapGetter<ushort>(Wrapper.dwarf_whatform, "dwarf_whatform");
 
 		/// <summary>
-		/// Like <see cref="Attribute.Form"/>, but returns <see cref="DW_FORM_indirect"/>
+		/// Like <see cref="Attribute.Form"/>, but returns <see cref="Form.Indirect"/>
 		/// instead of determining the 'final' form
 		/// </summary>
 		public ushort DirectForm
@@ -181,7 +181,8 @@ namespace Dwarf_net
 			get
 			{
 				var v = die.Version;
-				return Wrapper.dwarf_get_form_class(v.Version, Number, v.OffsetSize, Form);
+				return Wrapper.dwarf_get_form_class(
+					v.Version, Number, v.OffsetSize, (ushort)Form);
 			}
 		}
 
