@@ -80,8 +80,34 @@ static readonly (string prefix, string enumName)[] enumPrefixes = {
 	("DW_TAG_", "Tag"),
 	("DW_FORM_", "Form"),
 	("DW_AT_", "AttributeNumber"),
-	("DW_OP_", "Operator"),
-	("DW_ATE_", "EncodingAttribute")
+	("DW_OP_", "Operation"),
+	("DW_ATE_", "BaseType"),
+	("DW_UT_", "UnitType"),
+	("DW_LLE_", "LocationListEntry"),
+	("DW_DS_", "DecimalSign"),
+	("DW_END_", "Endianness"),
+	("DW_ACCESS_", "Accessibility"),
+	("DW_VIS_", "Visibility"),
+	("DW_VIRTUALITY_", "Virtuality"),
+	("DW_LANG_", "SourceLanguage"),
+	("DW_ID_", "IdentifierCase"),
+	("DW_CC_", "CallingConvention"),
+	("DW_INL_", "Inline"),
+	("DW_ORD_", "ArrayOrdering"),
+	("DW_DSC_", "DiscriminantDescriptor"),
+	("DW_IDX_", "NameIndex"),
+	("DW_DEFAULTED_", "DefaultedMember"),
+	("DW_LNS_", "LineNumberStandardOpcode"),
+	("DW_LNE_", "LineNumberExtendedOpcode"),
+	("DW_LNCT_", "LineNumberHeaderEntryFormat"),
+	("DW_MACRO_", "MacroInformationEntryType"),
+	("DW_CFA_", "CallFrameInstruction"),
+	("DW_RLE_", "RangeListEntry")
+};
+
+static readonly HashSet<string> omitList = new HashSet<string>
+{
+	"DW_LANG_Upc"
 };
 
 /* Finds the longest prefix that matches all given strings */
@@ -142,6 +168,11 @@ static IEnumerable<(string name, string val)> extractDefines(string file)
 			{
 				v.name = d.name;
 				return true;
+			}
+			if (omitList.Contains(d.name))
+			{
+				v = default;
+				return false;
 			}
 
 			v = (d.name, translateNumberFromC(d.val));
@@ -254,7 +285,12 @@ void fill(TextWriter o)
 	o.WriteLine("	}\n");
 
 	foreach (var e in enums.Select(ex => ex.e).Concat(extractEnums(input)))
+	{
+		if(!e.Entries.Any())
+			Console.WriteLine($"Warning: Empty enum '{e.Name}'");
+
 		e.PrintTo(o, "\t");
+	}
 
 	o.WriteLine("}");
 }
