@@ -176,7 +176,7 @@ namespace Dwarf_net
 		/// <summary>
 		/// Determines the form class of this attribute
 		/// </summary>
-		public Dwarf_Form_Class FormClass
+		public FormClass FormClass
 		{
 			get
 			{
@@ -188,7 +188,10 @@ namespace Dwarf_net
 #endregion
 
 		internal Attribute(Die die, IntPtr handle)
-			=> this.handle = handle;
+		{
+			this.die = die;
+			this.handle = handle;
+		}
 
 		~Attribute()
 			=> Wrapper.dwarf_dealloc_attribute(handle);
