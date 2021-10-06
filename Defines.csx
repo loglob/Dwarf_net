@@ -3,31 +3,121 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 
-/** Type modifiers prepended to enum type definitions */
+class EnumDef
+{
+	public readonly string Name;
+	public List<(string name, string value)> Entries;
+
+	public EnumDef(string name)
+	{
+		Name = name;
+		Entries = new List<(string name, string value)>();
+	}
+
+	/* Parses a C enum definition */
+	public static EnumDef Parse(string def)
+	{
+		var parts = def.Split('{', 2);
+
+		var d = new EnumDef(parts[0]
+			.Split((char[])null, StringSplitOptions.RemoveEmptyEntries)
+			.Last()
+			.Substring("Dwarf_".Length)
+			.pascalify());
+
+		IEnumerable<(string name, string value)> entries = parts[1]
+			.Split('}', 2)[0]
+			.Split(',')
+			.Select(s => s.Split('=', 2))
+			.Select(s => s.Length == 2
+				? (s[0].Trim(), s[1].Trim())
+				: (s[0].Trim(), null));
+
+		var pfx = entries.Select(s => s.name).longestPrefix();
+
+		foreach (var e in entries)
+			d[e.name.Substring(pfx.Length).pascalify()] = e.value;
+
+		return d;
+	}
+
+	public string this[string name]
+	{
+		set
+			=> Entries.Add((name, value));
+	}
+
+	/* Prints the enum to the given stream */
+	public void PrintTo(TextWriter pr, string lnPrefix)
+	{
+		pr.WriteLine($"{lnPrefix}{enumModifiers}enum {Name}");
+		pr.WriteLine(lnPrefix + "{");
+
+		foreach (var e in Entries)
+			pr.WriteLine(lnPrefix + $"\t{e.name}" +
+				((e.value is null) ? "," : $" = {e.value},"));
+
+		pr.WriteLine(lnPrefix + "}\n");
+	}
+}
+
+/* Type modifiers prepended to enum type definitions */
 const string enumModifiers = "public ";
 
-static readonly (string, string)[] manual = {
-	("DW_DLV_BADADDR", "(IntPtr)-1L"),
-	("DW_DLV_NOCOUNT", "-1L"),
-	("DW_DLV_BADOFFSET", "(IntPtr)-1L")
+/* The file to write to */
+const string outfile = "Defines.cs";
+
+/* Definitions with predefined values */
+static readonly Dictionary<string,string> manual = new Dictionary<string, string>
+{
+	{ "DW_DLV_BADADDR", "-1L"},
+	{ "DW_DLV_NOCOUNT", "-1L"	},
+	{ "DW_DLV_BADOFFSET", "-1L" }
 };
 
-static string RemoveComment(string s)
-{
-	var ss = s.Split("/*", 2);
+/* Every value with these prefixes is packed into their own enum type */
+static readonly (string prefix, string enumName)[] enumPrefixes = {
+	("DW_TAG_", "Tag"),
+	("DW_FORM_", "Form"),
+	("DW_AT_", "AttributeNumber"),
+	("DW_OP_", "Operator"),
+	("DW_ATE_", "EncodingAttribute")
+};
 
-	if(ss.Length == 2)
-		return ss[0] + RemoveComment(ss[1].Split("*/",2)[1]);
-	else
-		return s.Split("//", 2)[0];
+/* Finds the longest prefix that matches all given strings */
+static string longestPrefix(this IEnumerable<string> s)
+{
+	StringBuilder sb = new StringBuilder();
+	string f = s.First();
+
+	while(s.All(x => x[sb.Length] == f[sb.Length]))
+		sb.Append(f[sb.Length]);
+
+	return sb.ToString();
+}
+
+/** Removes any comments in the string */
+static string removeComment(this string s)
+{
+	var ls = s.Split("//", 2);
+
+	if(ls.Length == 2 && !ls[0].Contains("/*"))
+		return ls[0].removeComment();
+
+	var bs = s.Split("/*", 2);
+
+	if(bs.Length == 2)
+		return bs[0] + bs[1].Split("*/", 2)[1].removeComment();
+
+	return s;
 }
 
 /** extracts enums from the file.
 	Does NOT scan for typedefs */
-static IEnumerable<string> extractEnums(string file)
+static IEnumerable<EnumDef> extractEnums(string file)
 	=> new Regex(@"enum\s+\S+\s*{.*?}", RegexOptions.Singleline)
 		.Matches(file)
-		.Select(m => enumModifiers + m.Value);
+		.Select(m => EnumDef.Parse(m.Value));
 
 delegate bool MaybeFunc<A, B>(A input, out B output);
 
@@ -48,6 +138,12 @@ static IEnumerable<(string name, string val)> extractDefines(string file)
 		.Select(m => (m.Groups[1].Value, m.Groups[2].Value.Trim()))
 		.Distinct()
 		.SelectWhere(((string name, string val) d, out (string name, string val) v) => {
+			if(manual.TryGetValue(d.name, out v.val))
+			{
+				v.name = d.name;
+				return true;
+			}
+
 			v = (d.name, translateNumberFromC(d.val));
 
 			if(v.val is null)
@@ -75,7 +171,7 @@ private static string cc(this string l, string r)
 
 /** Parses a C integer literal and translates it to a C# integer literal.
 	Does NOT support manual type casting or bitwise operations */
-private static string translateNumberFromC(string val)
+private static string translateNumberFromC(this string val)
 {
 	if(val.StartsWith("(") && val.EndsWith(")"))
 		return translateNumberFromC(val.Substring(1, val.Length - 2));
@@ -103,27 +199,35 @@ private static string translateNumberFromC(string val)
 	return null;
 }
 
-public static string JoinLines(this IEnumerable<string> s)
-	=> string.Join('\n', s);
+public static string StrJoin(this IEnumerable<string> s, string joiner="")
+	=> string.Join(joiner, s);
 
-string literalType(string val)
+static string literalType(this string val)
 	=> new Regex(@"\dL$").IsMatch(val) ? "long" : "int";
 
-/** Generates an enum definition from the preprocessor definitions on the file */
-string defineEnum(string file, string name = "Defines")
-	=> $"	{enumModifiers}static class {name}\n" +
-		"	{\n" +
-		extractDefines(file)
-			.Select(d =>
-		$"		public const {literalType(d.val)} {d.name} = {d.val};")
-			.JoinLines() +
-		"\n	}";
+// Transforms a snake_case string into a PascalCase string
+static string pascalify(this string s)
+	=> s.Split('_').Select(ss => Char.ToUpper(ss[0]) + ss.Substring(1).ToLower()).StrJoin();
 
-string input = string.Join('\n', Directory.GetFiles("/usr/include/libdwarf/")
+string input = Directory.GetFiles("/usr/include/libdwarf/")
 	.Select(File.ReadAllText)
-	.Select(RemoveComment));
+	.Select(removeComment)
+	.StrJoin("\n");
 
-const string outfile = "Defines.cs";
+static bool TryFirst<T>(this IEnumerable<T> ls, Func<T, bool> p, out T val)
+{
+	foreach (var i in ls)
+	{
+		if(p(i))
+		{
+			val = i;
+			return true;
+		}
+	}
+
+	val = default;
+	return false;
+}
 
 void fill(TextWriter o)
 {
@@ -132,12 +236,25 @@ void fill(TextWriter o)
 		"using System;\n" +
 		"\n" +
 		"namespace Dwarf_net\n" +
-		"{");
+		"{\n" +
+		"	public static class Defines\n" +
+		"	{\n");
 
-	o.WriteLine(defineEnum(input));
+	(string prefix, EnumDef e)[] enums
+		= enumPrefixes.Select(e => (e.prefix, new EnumDef(e.enumName))).ToArray();
 
-	foreach(var e in extractEnums(input))
-		o.WriteLine("\t" + e.Replace("\n", "\n\t"));
+	foreach (var d in extractDefines(input))
+	{
+		if(enums.TryFirst(e => d.name.StartsWith(e.prefix), out var e))
+			e.e[d.name.Substring(e.prefix.Length).pascalify()] = d.val;
+		else
+			o.WriteLine($"\t\tpublic const {d.val.literalType()} {d.name} = {d.val};");
+	}
+
+	o.WriteLine("	}\n");
+
+	foreach (var e in enums.Select(ex => ex.e).Concat(extractEnums(input)))
+		e.PrintTo(o, "\t");
 
 	o.WriteLine("}");
 }
