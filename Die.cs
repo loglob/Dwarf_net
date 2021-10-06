@@ -94,16 +94,16 @@ namespace Dwarf_net
 		}
 
 		/// <summary>
-		/// The tag of this DIE
+		/// The tag of this DIE.
 		/// </summary>
-		public ushort Tag
+		public Tag Tag
 		{
 			get
 			{
 				switch(Wrapper.dwarf_tag(handle, out ushort val, out IntPtr error))
 				{
 					case DW_DLV_OK:
-						return val;
+						return (Tag)val;
 					case DW_DLV_ERROR:
 						throw DwarfException.Wrap(error);
 					default:
