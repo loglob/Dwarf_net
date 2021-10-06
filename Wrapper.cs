@@ -1337,7 +1337,7 @@ namespace Dwarf_net
 			IntPtr die,
 			out ulong return_highpc,
 			out ushort return_form,
-			out Dwarf_Form_Class return_class,
+			out FormClass return_class,
 			out IntPtr error
 		);
 
@@ -1969,7 +1969,7 @@ namespace Dwarf_net
 		/// might have this problem.
 		/// </returns>
 		[DllImport(lib)]
-		public static extern Dwarf_Form_Class dwarf_get_form_class(
+		public static extern FormClass dwarf_get_form_class(
 			ushort dwversion,
 			ushort attrnum,
 			ushort offset_size,
