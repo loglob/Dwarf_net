@@ -178,6 +178,8 @@ namespace Dwarf_net
 #region Properties
 		/// <summary>
 		/// The Offset of the next Compilation Unit to be selected with <see cref="NextUnit"/>
+		/// <br/>
+		/// A value of 0 indicates that no CU is currently selected and some Operations will fail
 		/// </summary>
 		public ulong NextUnitOffset { get; private set; } = 0;
 
@@ -220,9 +222,10 @@ namespace Dwarf_net
 		{
 			IntPtr error;
 			this.handle = handle;
+			int code;
 
 			// init *Count fields
-			switch(Wrapper.dwarf_sec_group_sizes(handle,
+			switch(code = Wrapper.dwarf_sec_group_sizes(handle,
 				out SectionCount, out GroupCount, out SelectedGroup, out ulong mapEntryCount,
 				out error))
 			{
@@ -233,14 +236,14 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_sec_group_sizes");
+					throw DwarfException.BadReturn("dwarf_sec_group_sizes", code);
 			}
 
 			var groupNumbers = new ulong[mapEntryCount];
 			var sectionNumbers = new ulong[mapEntryCount];
 			var sectionNamePtr = new IntPtr[mapEntryCount];
 
-			switch(Wrapper.dwarf_sec_group_map(handle,
+			switch(code = Wrapper.dwarf_sec_group_map(handle,
 				mapEntryCount, groupNumbers, sectionNumbers, sectionNamePtr,
 				out error))
 			{
@@ -251,7 +254,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_sec_group_map");
+					throw DwarfException.BadReturn("dwarf_sec_group_map", code);
 			}
 
 			Sections = Enumerable.Range(0, (int)mapEntryCount)
@@ -312,7 +315,9 @@ namespace Dwarf_net
 		/// </summary>
 		private IEnumerable<Die> getDies(bool isInfo)
 		{
-			switch(Wrapper.dwarf_siblingof_b(handle, IntPtr.Zero, isInfo ? 1 : 0,
+			int code;
+			switch(code = Wrapper.dwarf_siblingof_b(
+				handle, IntPtr.Zero, isInfo ? 1 : 0,
 				out IntPtr die, out IntPtr error))
 			{
 				case DW_DLV_OK:
@@ -332,7 +337,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_siblingof_b");
+					throw DwarfException.BadReturn("dwarf_siblingof_b", code);
 			}
 		}
 
@@ -374,7 +379,8 @@ namespace Dwarf_net
 		/// <returns>THe CU header of the new compilation unit, or null if the last compilation unit was reached</returns>
 		public CompilationUnitHeader? NextUnit(bool isInfo)
 		{
-			switch(Wrapper.dwarf_next_cu_header_d(
+			int code;
+			switch(code = Wrapper.dwarf_next_cu_header_d(
 				handle, isInfo ? 1 : 0,
 				out ulong headerLength,
 				out ushort versionStamp,
@@ -413,7 +419,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_sec_group_map");
+					throw DwarfException.BadReturn("dwarf_sec_group_map", code);
 			}
 		}
 
@@ -429,7 +435,8 @@ namespace Dwarf_net
 			if(path is null)
 				throw new ArgumentNullException(nameof(path));
 
-			switch(Wrapper.dwarf_init_path(path,
+			int code;
+			switch(code = Wrapper.dwarf_init_path(path,
 				IntPtr.Zero, 0, 0, group,
 				null, IntPtr.Zero, out IntPtr handle,
 				IntPtr.Zero, 0, IntPtr.Zero,
@@ -448,7 +455,7 @@ namespace Dwarf_net
 						throw new FileNotFoundException(null, path);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_init_b");
+					throw DwarfException.BadReturn("dwarf_init_b", code);
 			}
 		}
 
@@ -458,7 +465,9 @@ namespace Dwarf_net
 		/// <returns>A dwarf_Debug reference</returns>
 		private static IntPtr initB(int fd, uint group)
 		{
-			switch(Wrapper.dwarf_init_b(fd, 0, group, null, IntPtr.Zero,
+			int code;
+			switch(code = Wrapper.dwarf_init_b(
+				fd, 0, group, null, IntPtr.Zero,
 				out IntPtr handle, out IntPtr err))
 			{
 				case DW_DLV_OK:
@@ -471,7 +480,7 @@ namespace Dwarf_net
 					throw new DwarfException("No debug sections found");
 
 				default:
-					throw DwarfException.BadReturn("dwarf_init_b");
+					throw DwarfException.BadReturn("dwarf_init_b", code);
 			}
 		}
 

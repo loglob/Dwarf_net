@@ -21,7 +21,8 @@ namespace Dwarf_net
 
 		public static bool wrapGetter<T>(getter<T> f, string name, out T val, bool allowNone = false)
 		{
-			switch(f(out val, out IntPtr error))
+			int code;
+			switch(code = f(out val, out IntPtr error))
 			{
 				case DW_DLV_OK:
 					return true;
@@ -35,7 +36,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn(name);
+					throw DwarfException.BadReturn(name, code);
 			}
 		}
 

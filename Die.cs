@@ -100,14 +100,15 @@ namespace Dwarf_net
 		{
 			get
 			{
-				switch(Wrapper.dwarf_tag(handle, out ushort val, out IntPtr error))
+				int code;
+				switch(code = Wrapper.dwarf_tag(handle, out ushort val, out IntPtr error))
 				{
 					case DW_DLV_OK:
 						return (Tag)val;
 					case DW_DLV_ERROR:
 						throw DwarfException.Wrap(error);
 					default:
-						throw DwarfException.BadReturn("dwarf_tag");
+						throw DwarfException.BadReturn("dwarf_tag", code);
 				}
 
 			}
@@ -123,7 +124,8 @@ namespace Dwarf_net
 		{
 			get
 			{
-				switch(Wrapper.dwarf_die_offsets(handle,
+				int code;
+				switch(code = Wrapper.dwarf_die_offsets(handle,
 					out ulong go, out _, out IntPtr error))
 				{
 					case DW_DLV_OK:
@@ -131,7 +133,7 @@ namespace Dwarf_net
 					case DW_DLV_ERROR:
 						throw DwarfException.Wrap(error);
 					default:
-						throw DwarfException.BadReturn("dwarf_die_offsets");
+						throw DwarfException.BadReturn("dwarf_die_offsets", code);
 				}
 			}
 		}
@@ -144,7 +146,8 @@ namespace Dwarf_net
 		{
 			get
 			{
-				switch(Wrapper.dwarf_die_offsets(handle,
+				int code;
+				switch(code = Wrapper.dwarf_die_offsets(handle,
 					out _, out ulong uo, out IntPtr error))
 				{
 					case DW_DLV_OK:
@@ -152,7 +155,7 @@ namespace Dwarf_net
 					case DW_DLV_ERROR:
 						throw DwarfException.Wrap(error);
 					default:
-						throw DwarfException.BadReturn("dwarf_die_offsets");
+						throw DwarfException.BadReturn("dwarf_die_offsets", code);
 				}
 			}
 		}
@@ -166,7 +169,8 @@ namespace Dwarf_net
 		{
 			get
 			{
-				switch(Wrapper.dwarf_diename(handle, out string name, out IntPtr error))
+				int code;
+				switch(code = Wrapper.dwarf_diename(handle, out string name, out IntPtr error))
 				{
 					case DW_DLV_OK:
 						return name;
@@ -178,7 +182,7 @@ namespace Dwarf_net
 						throw DwarfException.Wrap(error);
 
 					default:
-						throw DwarfException.BadReturn("dwarf_diename");
+						throw DwarfException.BadReturn("dwarf_diename", code);
 				}
 			}
 		}
@@ -199,7 +203,6 @@ namespace Dwarf_net
 			get
 			{
 				int code;
-
 				switch(code = Wrapper.dwarf_attrlist(handle,
 					out IntPtr buf, out long count, out IntPtr error))
 				{
@@ -299,7 +302,9 @@ namespace Dwarf_net
 #region Methods
 		public string Text(ushort attrnum)
 		{
-			switch(Wrapper.dwarf_die_text(handle, attrnum, out string text, out IntPtr error))
+			int code;
+			switch(code = Wrapper.dwarf_die_text(handle, attrnum,
+				out string text, out IntPtr error))
 			{
 				case DW_DLV_OK:
 					return text;
@@ -311,7 +316,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_die_text");
+					throw DwarfException.BadReturn("dwarf_die_text", code);
 			}
 		}
 
@@ -323,7 +328,8 @@ namespace Dwarf_net
 		/// </param>
 		public bool HasAttribute(ushort number)
 		{
-			switch(Wrapper.dwarf_hasattr(handle, number,
+			int code;
+			switch(code = Wrapper.dwarf_hasattr(handle, number,
 				out int has, out IntPtr error))
 			{
 				case DW_DLV_OK:
@@ -333,7 +339,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_hasattr");
+					throw DwarfException.BadReturn("dwarf_hasattr", code);
 			}
 		}
 
@@ -348,7 +354,8 @@ namespace Dwarf_net
 		/// <exception cref="DwarfException"></exception>
 		public Attribute GetAttribute(ushort number)
 		{
-			switch(Wrapper.dwarf_attr(handle, number,
+			int code;
+			switch(code = Wrapper.dwarf_attr(handle, number,
 				out IntPtr attr, out IntPtr error))
 			{
 				case DW_DLV_OK:
@@ -361,7 +368,7 @@ namespace Dwarf_net
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn("dwarf_attr");
+					throw DwarfException.BadReturn("dwarf_attr", code);
 			}
 		}
 

@@ -72,8 +72,5 @@ namespace Dwarf_net
 
 		public static DwarfException BadReturn(string func, int code)
 			=> new DwarfException($"Unexpected return code from {func}(): {code}");
-
-		public static DwarfException BadReturn(string func)
-			=> new DwarfException($"Unexpected return code from {func}()");
 	}
 }
