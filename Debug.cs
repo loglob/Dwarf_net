@@ -356,18 +356,19 @@ namespace Dwarf_net
 			var co = NextUnitOffset;
 			var dies = new List<Die>();
 
-			if(co == 0)
-				NextUnit(isInfo);
-			if(co != 0)
+			if (co == 0)
 			{
-				do
-				{
-					foreach(var die in getDies(isInfo))
-						dies.Add(die);
-
-					NextUnit(isInfo);
-				} while (NextUnitOffset != co);
+				if(NextUnit(isInfo) == null)
+					return dies;
 			}
+
+			do
+			{
+				foreach(var die in getDies(isInfo))
+					dies.Add(die);
+
+				NextUnit(isInfo);
+			} while (NextUnitOffset != co);
 
 			return dies;
 		}
