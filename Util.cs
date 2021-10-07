@@ -9,9 +9,13 @@ namespace Dwarf_net
 	internal static class Util
 	{
 		public delegate int getter<T>(out T ret, out IntPtr error);
-
+		public delegate int hGetter<T>(IntPtr handle, out T ret, out IntPtr error);
 		public delegate int getter<A, B, C>(out A a, out B b, out C c, out IntPtr error);
 
+		public static T wrapGetter<T>(hGetter<T> h, string name, IntPtr handle)
+			=> wrapGetter(
+				(out T val, out IntPtr error) => h(handle, out val, out error),
+				name);
 
 		public static T wrapGetter<T>(getter<T> f, string name)
 		{

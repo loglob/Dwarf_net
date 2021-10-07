@@ -14,8 +14,6 @@ namespace Dwarf_net
 		private delegate int discr_entry<T>(IntPtr head, ulong index,
 			out ushort type, out T low, out T high, out IntPtr error);
 
-		private delegate int hGetter<T>(IntPtr attr, out T ret, out IntPtr error);
-
 #region Fields
 		/// <summary>
 		/// The opaque pointer returned by libdwarf 
@@ -198,7 +196,7 @@ namespace Dwarf_net
 			=> Wrapper.dwarf_dealloc_attribute(handle);
 		
 		private T wrapGetter<T>(hGetter<T> f, string name)
-			=> Util.wrapGetter((out T val, out IntPtr error) => f(handle, out val, out error), name);
+			=> Util.wrapGetter(f, name, handle);
 	
 		private (ushort, T, T)[] discriminants<T>(discr_entry<T> e, string name)
 		{
