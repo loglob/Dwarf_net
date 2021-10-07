@@ -26,7 +26,7 @@ class StaticStringMarshaler : ICustomMarshaler
 			+ " is only for returned parameters");
 
 	object ICustomMarshaler.MarshalNativeToManaged(IntPtr pNativeData)
-		=> Marshal.PtrToStringAnsi(pNativeData);
+		=> Marshal.PtrToStringUTF8(pNativeData);
 
 	public static ICustomMarshaler GetInstance(string _)
 		=> instance;
