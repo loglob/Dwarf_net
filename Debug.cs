@@ -215,6 +215,36 @@ namespace Dwarf_net
 		public List<Die> AllTypesDies
 			=> getAllDies(false);
 
+		/// <summary>
+		/// Retrieves the globals for the pubnames in the .debug_pubnames section.
+		/// The returned results are for the entire section.
+		/// Global names refer exclusively to names and offsets in the .debug_info section.
+		/// </summary>
+		public Global[] Globals
+		{
+			get
+			{
+				int code;
+
+				switch(code = Wrapper.dwarf_get_globals(handle, out IntPtr array, out long count, out IntPtr error))
+				{
+					// NOTE: This relies on libdwarf-side GC, may be improved by using a proper object wrapper
+					case DW_DLV_OK:
+						return Util.PtrToStructList<IntPtr>(array)
+							.Select(h => new Global(this, h))
+							.ToArray((int)count);
+					case DW_DLV_NO_ENTRY:
+						throw new InvalidOperationException("The .debug_pubnames section does not exist");
+
+					case DW_DLV_ERROR:
+						throw DwarfException.Wrap(error);
+
+					default:
+						throw DwarfException.BadReturn("dwarf_get_globals", code);
+				}
+			}
+		}
+
 #endregion
 
 #region Constructors

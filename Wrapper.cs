@@ -3239,6 +3239,8 @@ namespace Dwarf_net
 		/// <br/>
 		/// Should be freed using <see cref="dwarf_dealloc"/>,
 		/// with the allocation type <see cref="DW_DLA_STRING"/>
+		/// <br/>
+		/// Actual type: out string / out char* / char**
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
@@ -3251,8 +3253,7 @@ namespace Dwarf_net
 		[DllImport(lib)]
 		public static extern int dwarf_globname(
 			IntPtr global,
-			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
-			out string return_name,
+			out IntPtr return_name,
 			out IntPtr error
 		);
 
