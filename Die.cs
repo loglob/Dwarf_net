@@ -2,9 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 using static Dwarf.Defines;
-using static Dwarf.Util;
 
 namespace Dwarf
 {
@@ -123,9 +121,7 @@ namespace Dwarf
 					Handle, out IntPtr buf, out long count, out IntPtr error
 				).handleOpt("dwarf_attrlist", error);
 
-				var r = PtrToStructList<IntPtr>(buf)
-					.Select(x => new Attribute(this, x))
-					.ToArray((int)count);
+				var r = buf.PtrToArray(count, x => new Attribute(this, x));
 
 				debug.Dealloc(buf, DW_DLA_LIST);
 

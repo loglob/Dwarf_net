@@ -223,9 +223,7 @@ namespace Dwarf
 					Handle,
 					out IntPtr array, out long count, out IntPtr error
 				).handleOpt("dwarf_get_globals", error)
-				? Util.PtrToStructList<IntPtr>(array)
-					.Select(h => new Global(this, h))
-					.ToArray((int)count)
+				? Util.PtrToArray(array, count, h => new Global(this, h))
 				: throw new InvalidOperationException(
 					"The .debug_pubnames section does not exist"
 				);

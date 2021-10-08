@@ -1,8 +1,6 @@
 using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using static Dwarf.Defines;
-using static Dwarf.Util;
 
 namespace Dwarf
 {
@@ -190,21 +188,24 @@ namespace Dwarf
 		{
 			var bp = wrapGetter<IntPtr>(Wrapper.dwarf_formblock, "dwarf_formblock");
 			var b = Marshal.PtrToStructure<Wrapper.Block>(bp);
+			IntPtr error;
 
-			if(!Wrapper.dwarf_discr_list(
+			if(! Wrapper.dwarf_discr_list(
 					Die.debug.Handle, b.bl_data, b.bl_len,
-					out IntPtr head, out ulong len, out IntPtr error)
+					out IntPtr head, out ulong len, out error)
 				.handleOpt("dwarf_discr_list", error))
 			{
 				Die.debug.Dealloc(bp, DW_DLA_BLOCK);
 				return new (ushort, T, T)[0];
 			}
 
-			var r = Naturals
-				.Select(i
-					=> e(head, (uint)i, out ushort t, out T l, out T h, out IntPtr error)
-						.handle(name, error, (t, l, h)))
-				.ToArray((int)len);
+			var r = new (ushort t, T l, T h)[len];
+
+			for (uint i = 0; i < len; i++)
+			{
+				e(head, i, out r[i].t, out r[i].l, out r[i].h, out error)
+					.handle(name, error);
+			}
 
 			Die.debug.Dealloc(bp, DW_DLA_BLOCK);
 			Die.debug.Dealloc(head, DW_DLA_DSC_HEAD);
