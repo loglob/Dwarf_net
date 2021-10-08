@@ -71,23 +71,24 @@ namespace Dwarf_net
 		{
 			get
 			{
-				int code;
-				switch(code = Wrapper.dwarf_globname(handle, out IntPtr namePtr, out IntPtr error))
-				{
-					case DW_DLV_OK:
-					{
-						var name = Marshal.PtrToStringUTF8(namePtr);
-						Wrapper.dwarf_dealloc(debug.handle, namePtr, DW_DLA_STRING);
-						return name;
-					}
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_globname", code);
-				}
+				var namePtr = Util.wrapGetter<IntPtr>(Wrapper.dwarf_globname, "dwarf_globname", handle);
+				var name = Marshal.PtrToStringUTF8(namePtr);
+				Wrapper.dwarf_dealloc(debug.handle, namePtr, DW_DLA_STRING);
+				return name;
 			}
 		}
+
+		/// <summary>
+		/// The offset in the section containing DIEs, i.e. .debug_info, of the DIE representing the pubname of this Global
+		/// </summary>
+		public ulong DieOffset
+			=> Util.wrapGetter<ulong>(Wrapper.dwarf_global_die_offset, "dwarf_global_die_offset", handle);
+
+		/// <summary>
+		/// The offset in the section containing DIEs, i.e. .debug_info, of the compilation-unit
+		/// header of the compilation-unit that contains the pubname of this Global
+		/// </summary>
+		public ulong CUOffset
+			=> Util.wrapGetter<ulong>(Wrapper.dwarf_global_cu_offset, "dwarf_global_cu_offset", handle);
 	}
 }
