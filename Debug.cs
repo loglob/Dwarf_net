@@ -7,7 +7,7 @@ using static Dwarf.Defines;
 
 namespace Dwarf
 {
-	public class Debug
+	public class Debug : HandleWrapper
 	{
 #region Subtypes
 
@@ -134,11 +134,6 @@ namespace Dwarf
 
 #region Fields
 		/// <summary>
-		/// The handle returned from dwarf_init_*
-		/// </summary>
-		internal IntPtr handle;
-
-		/// <summary>
 		/// The total amount of sections in the object.
 		/// Includes sections that are irrelevant to libdwarf.
 		/// </summary>
@@ -220,72 +215,41 @@ namespace Dwarf
 		/// The returned results are for the entire section.
 		/// Global names refer exclusively to names and offsets in the .debug_info section.
 		/// </summary>
+		/// <exception cref="InvalidOperationException">
+		/// If the .debug_pubnames section does not exist
+		/// </exception>
 		public Global[] Globals
-		{
-			get
-			{
-				int code;
-
-				switch(code = Wrapper.dwarf_get_globals(handle, out IntPtr array, out long count, out IntPtr error))
-				{
-					// NOTE: This relies on libdwarf-side GC, may be improved by using a proper object wrapper
-					case DW_DLV_OK:
-						return Util.PtrToStructList<IntPtr>(array)
-							.Select(h => new Global(this, h))
-							.ToArray((int)count);
-					case DW_DLV_NO_ENTRY:
-						throw new InvalidOperationException("The .debug_pubnames section does not exist");
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_get_globals", code);
-				}
-			}
-		}
+			=> Wrapper.dwarf_get_globals(
+					Handle,
+					out IntPtr array, out long count, out IntPtr error
+				).handleOpt("dwarf_get_globals", error)
+				? Util.PtrToStructList<IntPtr>(array)
+					.Select(h => new Global(this, h))
+					.ToArray((int)count)
+				: throw new InvalidOperationException(
+					"The .debug_pubnames section does not exist"
+				);
 
 #endregion
 
 #region Constructors
-		private Debug(IntPtr handle)
+		private Debug(IntPtr handle) : base(handle)
 		{
 			IntPtr error;
-			this.handle = handle;
-			int code;
 
-			// init *Count fields
-			switch(code = Wrapper.dwarf_sec_group_sizes(handle,
+			Wrapper.dwarf_sec_group_sizes(handle,
 				out SectionCount, out GroupCount, out SelectedGroup, out ulong mapEntryCount,
-				out error))
-			{
-				case DW_DLV_OK:
-					break;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_sec_group_sizes", code);
-			}
+				out error)
+				.handle("dwarf_sec_group_sizes", error);
 
 			var groupNumbers = new ulong[mapEntryCount];
 			var sectionNumbers = new ulong[mapEntryCount];
 			var sectionNamePtr = new IntPtr[mapEntryCount];
 
-			switch(code = Wrapper.dwarf_sec_group_map(handle,
+			Wrapper.dwarf_sec_group_map(Handle,
 				mapEntryCount, groupNumbers, sectionNumbers, sectionNamePtr,
-				out error))
-			{
-				case DW_DLV_OK:
-					break;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_sec_group_map", code);
-			}
+				out error)
+				.handle("dwarf_sec_group_map", error);
 
 			Sections = Enumerable.Range(0, (int)mapEntryCount)
 				.Select(i => new Section(Marshal.PtrToStringAnsi(sectionNamePtr[i]), groupNumbers[i], sectionNumbers[i]))
@@ -331,10 +295,9 @@ namespace Dwarf
 #endregion
 
 		~Debug()
-		{
-			if(Wrapper.dwarf_finish(handle, out IntPtr error) != DW_DLV_OK)
-				throw DwarfException.Wrap(error);
-		}
+			=> Wrapper.dwarf_finish(Handle, out IntPtr error)
+				.handle("dwarf_finish", error);
+
 
 #region Methods
 		/// <summary>
@@ -345,30 +308,22 @@ namespace Dwarf
 		/// </summary>
 		private IEnumerable<Die> getDies(bool isInfo)
 		{
-			int code;
-			switch(code = Wrapper.dwarf_siblingof_b(
-				handle, IntPtr.Zero, isInfo ? 1 : 0,
-				out IntPtr die, out IntPtr error))
+			int code = Wrapper.dwarf_siblingof_b(
+				Handle, IntPtr.Zero, isInfo ? 1 : 0,
+				out IntPtr die, out IntPtr error);
+
+			if(code == DW_DLV_ERROR && error == IntPtr.Zero && NextUnitOffset == 0)
+				throw new InvalidOperationException(
+				"You need to set the current Compilation Unit using NextUnit(), "
+				+ "or use AllInfoDies/AllTypesDies to access DIEs!");
+
+			if(code.handleOpt("dwarf_siblingof_b", error))
 			{
-				case DW_DLV_OK:
-				{
-					var d = new Die(this, die);
-					return d.Siblings.Prepend(d);
-				}
-
-				case DW_DLV_NO_ENTRY:
-					return Enumerable.Empty<Die>();
-
-				case DW_DLV_ERROR:
-					if(error == IntPtr.Zero && NextUnitOffset == 0)
-						throw new InvalidOperationException(
-						"You need to set the current Compilation Unit using NextUnit(), "
-						+ "or use AllInfoDies/AllTypesDies to access DIEs!");
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_siblingof_b", code);
+				var d = new Die(this, die);
+				return d.Siblings.Prepend(d);
 			}
+			else
+				return Enumerable.Empty<Die>();
 		}
 
 		/// <summary>
@@ -404,15 +359,22 @@ namespace Dwarf
 		}
 
 		/// <summary>
+		/// Deallocates a libdwarf-allocated pointer
+		/// </summary>
+		/// <param name="ptr"></param>
+		/// <param name="dla"></param>
+		internal void Dealloc(IntPtr ptr, int dla)
+			=> Wrapper.dwarf_dealloc(Handle, ptr, dla);
+
+		/// <summary>
 		/// Moves the state of this Debug to the next Compilation Unit
 		/// </summary>
 		/// <param name="isInfo">Whether to search .debug_info or .debug_types for CU headers</param>
 		/// <returns>THe CU header of the new compilation unit, or null if the last compilation unit was reached</returns>
 		public CompilationUnitHeader? NextUnit(bool isInfo)
 		{
-			int code;
-			switch(code = Wrapper.dwarf_next_cu_header_d(
-				handle, isInfo ? 1 : 0,
+			if(Wrapper.dwarf_next_cu_header_d(
+				Handle, isInfo ? 1 : 0,
 				out ulong headerLength,
 				out ushort versionStamp,
 				out ulong abbrevOffset,
@@ -424,33 +386,27 @@ namespace Dwarf
 				out ulong nextOffset,
 				out ushort headerType,
 				out IntPtr error
-			))
+			).handleOpt("dwarf_next_cu_header_d", error))
 			{
-				case DW_DLV_NO_ENTRY:
-					NextUnitOffset = 0;
-					return null;
+				NextUnitOffset = 0;
+				return null;
+			}
+			else
+			{
+				ulong o = NextUnitOffset;
+				NextUnitOffset = nextOffset;
 
-				case DW_DLV_OK:
-					ulong o = NextUnitOffset;
-					NextUnitOffset = nextOffset;
-
-					return new CompilationUnitHeader(
-						headerLength,
-						versionStamp,
-						abbrevOffset,
-						addressSize,
-						offsetSize,
-						extensionSize,
-						typeOffset,
-						headerType,
-						o
-					);
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_sec_group_map", code);
+				return new CompilationUnitHeader(
+					headerLength,
+					versionStamp,
+					abbrevOffset,
+					addressSize,
+					offsetSize,
+					extensionSize,
+					typeOffset,
+					headerType,
+					o
+				);
 			}
 		}
 
@@ -466,28 +422,15 @@ namespace Dwarf
 			if(path is null)
 				throw new ArgumentNullException(nameof(path));
 
-			int code;
-			switch(code = Wrapper.dwarf_init_path(path,
-				IntPtr.Zero, 0, 0, group,
-				null, IntPtr.Zero, out IntPtr handle,
-				IntPtr.Zero, 0, IntPtr.Zero,
-				out IntPtr err))
-			{
-				case DW_DLV_OK:
-					return handle;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(err);
-
-				case DW_DLV_NO_ENTRY:
-					if(File.Exists(path))
-						throw new DwarfException("Unknown DLV_NO_ENTRY error");
-					else
-						throw new FileNotFoundException(null, path);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_init_b", code);
-			}
+			return Wrapper.dwarf_init_path(
+					path,
+					IntPtr.Zero, 0, 0, group,
+					null, IntPtr.Zero, out IntPtr handle,
+					IntPtr.Zero, 0, IntPtr.Zero,
+					out IntPtr error
+				).handleOpt("dwarf_init_path", error)
+				? handle
+				: throw new FileNotFoundException(null, path);
 		}
 
 		/// <summary>
@@ -495,25 +438,12 @@ namespace Dwarf
 		/// </summary>
 		/// <returns>A dwarf_Debug reference</returns>
 		private static IntPtr initB(int fd, uint group)
-		{
-			int code;
-			switch(code = Wrapper.dwarf_init_b(
-				fd, 0, group, null, IntPtr.Zero,
-				out IntPtr handle, out IntPtr err))
-			{
-				case DW_DLV_OK:
-					return handle;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(err);
-
-				case DW_DLV_NO_ENTRY:
-					throw new DwarfException("No debug sections found");
-
-				default:
-					throw DwarfException.BadReturn("dwarf_init_b", code);
-			}
-		}
+			=> Wrapper.dwarf_init_b(
+					fd, 0, group, null, IntPtr.Zero,
+					out IntPtr handle, out IntPtr error
+				).handleOpt("dwarf_init_b", error)
+				? handle
+				: throw new FormatException("No debug sections found");
 
 #endregion
 	}

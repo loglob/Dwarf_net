@@ -11,14 +11,9 @@ namespace Dwarf
 	/// <summary>
 	/// Reprents a DWARF Debug Information Entry
 	/// </summary>
-	public class Die
+	public class Die : HandleWrapper
 	{
 #region Fields
-		/// <summary>
-		/// The opaque pointer returned from libdwarf
-		/// </summary>
-		internal IntPtr handle;
-
 		/// <summary>
 		/// The coresponding Debug object.
 		/// </summary>
@@ -33,7 +28,7 @@ namespace Dwarf
 		/// If false, this die originated from the .debug_types section.
 		/// </summary>
 		public bool IsInfo
-			=> Wrapper.dwarf_get_die_infotypes_flag(handle) != 0;
+			=> Wrapper.dwarf_get_die_infotypes_flag(Handle) != 0;
 
 		/// <summary>
 		/// All siblings of this DIE
@@ -44,25 +39,15 @@ namespace Dwarf
 			{
 				int isInfo = IsInfo ? 1 : 0;
 
-				for (IntPtr cur = handle; ;)
+				for (IntPtr cur = Handle; ;)
 				{
-					int code;
-					switch (code = Wrapper.dwarf_siblingof_b(debug.handle, cur, isInfo,
-						out cur, out IntPtr error))
-					{
-						case DW_DLV_NO_ENTRY:
-							yield break;
-
-						case DW_DLV_OK:
-							yield return new Die(debug, cur);
-						break;
-
-						case DW_DLV_ERROR:
-							throw DwarfException.Wrap(error);
-
-						default:
-							throw DwarfException.BadReturn("dwarf_siblingof_b", code);
-					}
+					if(Wrapper.dwarf_siblingof_b(
+							debug.Handle, cur, isInfo,
+							out cur, out IntPtr error
+					).handleOpt("dwarf_siblingof_b", error))
+						yield return new Die(debug, cur);
+					else
+						yield break;
 				}
 			}
 		}
@@ -74,22 +59,13 @@ namespace Dwarf
 		{
 			get
 			{
-				int code;
-				switch (code = Wrapper.dwarf_child(handle, out IntPtr kid, out IntPtr error))
+				if(wrapGetter(Wrapper.dwarf_child, "dwarf_child", out IntPtr kid))
 				{
-					case DW_DLV_NO_ENTRY:
-						return Enumerable.Empty<Die>();
-
-					case DW_DLV_OK:
-						var child = new Die(debug, kid);
-						return child.Siblings.Prepend(child);
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_child", code);
+					var child = new Die(debug, kid);
+					return child.Siblings.Prepend(child);
 				}
+				else
+					return Enumerable.Empty<Die>();
 			}
 		}
 
@@ -97,22 +73,7 @@ namespace Dwarf
 		/// The tag of this DIE.
 		/// </summary>
 		public Tag Tag
-		{
-			get
-			{
-				int code;
-				switch(code = Wrapper.dwarf_tag(handle, out ushort val, out IntPtr error))
-				{
-					case DW_DLV_OK:
-						return (Tag)val;
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-					default:
-						throw DwarfException.BadReturn("dwarf_tag", code);
-				}
-
-			}
-		}
+			=> (Tag)wrapGetter<ushort>(Wrapper.dwarf_tag, "dwarf_tag");
 
 		/// <summary>
 		/// The position of this DIE in the section containing debugging information entries
@@ -121,44 +82,16 @@ namespace Dwarf
 		/// in the section containing dies i.e .debug_info
 		/// </summary>
 		public ulong GlobalOffset
-		{
-			get
-			{
-				int code;
-				switch(code = Wrapper.dwarf_die_offsets(handle,
-					out ulong go, out _, out IntPtr error))
-				{
-					case DW_DLV_OK:
-						return go;
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-					default:
-						throw DwarfException.BadReturn("dwarf_die_offsets", code);
-				}
-			}
-		}
+			=> Wrapper.dwarf_die_offsets(Handle, out ulong go, out _, out IntPtr error)
+				.handle("dwarf_die_offsets", error, go);
 
 		/// <summary>
 		/// The offset of this DIE from the start of the compilation-unit that it belongs to,
 		/// rather than the start of .debug_info (i.e. it is a Compilation-Unit-relative offset).
 		/// </summary>
 		public ulong UnitOffset
-		{
-			get
-			{
-				int code;
-				switch(code = Wrapper.dwarf_die_offsets(handle,
-					out _, out ulong uo, out IntPtr error))
-				{
-					case DW_DLV_OK:
-						return uo;
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-					default:
-						throw DwarfException.BadReturn("dwarf_die_offsets", code);
-				}
-			}
-		}
+			=> Wrapper.dwarf_die_offsets(Handle, out _, out ulong uo, out IntPtr error)
+				.handle("dwarf_die_offsets", error, uo);
 
 		/// <summary>
 		/// The name of this DIE, represented by the name attribute (<see cref="AttributeNumber.Name"/>)
@@ -166,26 +99,9 @@ namespace Dwarf
 		/// May be null is this DIE does not have a name attribute.
 		/// </summary>
 		public string Name
-		{
-			get
-			{
-				int code;
-				switch(code = Wrapper.dwarf_diename(handle, out string name, out IntPtr error))
-				{
-					case DW_DLV_OK:
-						return name;
-
-					case DW_DLV_NO_ENTRY:
-						return null;
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_diename", code);
-				}
-			}
-		}
+			=> wrapGetter(Wrapper.dwarf_diename, "dwarf_diename", out string name)
+				? name
+				: null;
 
 		/// <summary>
 		/// The abbreviation code of this DIE.
@@ -193,7 +109,7 @@ namespace Dwarf
 		/// for the compilation unit of which this DIE is a part
 		/// </summary>
 		public int AbbreviationCode
-			=> Wrapper.dwarf_die_abbrev_code(handle);
+			=> Wrapper.dwarf_die_abbrev_code(Handle);
 
 		/// <summary>
 		/// All the attributes of this DIE
@@ -202,28 +118,18 @@ namespace Dwarf
 		{
 			get
 			{
-				int code;
-				switch(code = Wrapper.dwarf_attrlist(handle,
-					out IntPtr buf, out long count, out IntPtr error))
-				{
-					case DW_DLV_OK:
-					case DW_DLV_NO_ENTRY:
-					{
-						var r = PtrToStructList<IntPtr>(buf)
-							.Select(x => new Attribute(this, x))
-							.ToArray((int)count);
+				// DW_DLV_NO_ENTRY falls through since it sets count to 0
+				Wrapper.dwarf_attrlist(
+					Handle, out IntPtr buf, out long count, out IntPtr error
+				).handleOpt("dwarf_attrlist", error);
 
-						Wrapper.dwarf_dealloc(debug.handle, buf, DW_DLA_LIST);
+				var r = PtrToStructList<IntPtr>(buf)
+					.Select(x => new Attribute(this, x))
+					.ToArray((int)count);
 
-						return r;
-					}
+				debug.Dealloc(buf, DW_DLA_LIST);
 
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_attrlist", code);
-				}
+				return r;
 			}
 		}
 
@@ -235,7 +141,7 @@ namespace Dwarf
 			get
 			{
 				(ushort v, ushort o) x;
-				Wrapper.dwarf_get_version_of_die(handle, out x.v, out x.o);
+				Wrapper.dwarf_get_version_of_die(Handle, out x.v, out x.o);
 				return x;
 			}
 		}
@@ -243,11 +149,8 @@ namespace Dwarf
 #endregion
 
 #region Constructors
-		internal Die(Debug debug, IntPtr handle)
-		{
-			this.debug = debug;
-			this.handle = handle;
-		}
+		internal Die(Debug debug, IntPtr handle) : base(handle)
+			=> this.debug = debug;
 
 		/// <summary>
 		/// Retrieves the DIE at byte offset <paramref name="offset"/>
@@ -272,53 +175,35 @@ namespace Dwarf
 		/// On an internal DWARF error
 		/// </exception>
 		public Die(Debug debug, ulong offset, bool isInfo = true)
-		{
-			this.debug = debug;
-			int code;
-
-			switch(code = Wrapper.dwarf_offdie_b(debug.handle, offset, isInfo ? 1 : 0,
-				out handle, out IntPtr error))
-			{
-				case DW_DLV_NO_ENTRY:
-					throw new ArgumentOutOfRangeException(nameof(offset),
-						"this ’die offset’ is not the offset of a real die, " +
-						"but is instead an offset of a null die, a padding die, " +
-						"or of some random zero byte");
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_offdie_b", code);
-			}
-		}
+			: this(debug, atOffset(debug, offset, isInfo))
+		{}
 #endregion
 
 		~Die()
-		{
-			Wrapper.dwarf_dealloc_die(handle);
-		}
+			=> Wrapper.dwarf_dealloc_die(Handle);
 
 #region Methods
-		public string Text(ushort attrnum)
-		{
-			int code;
-			switch(code = Wrapper.dwarf_die_text(handle, attrnum,
-				out string text, out IntPtr error))
-			{
-				case DW_DLV_OK:
-					return text;
+		/// <summary>
+		/// Wrapper for Debug.dwarf_offdie_b
+		/// </summary>
+		private static IntPtr atOffset(Debug debug, ulong offset, bool isInfo)
+			=> Wrapper.dwarf_offdie_b(
+					debug.Handle, offset, isInfo ? 1 : 0,
+					out IntPtr die, out IntPtr error
+				).handleOpt("dwarf_offdie_b", error)
+				? die
+				: throw new ArgumentOutOfRangeException(nameof(offset),
+					"this ’die offset’ is not the offset of a real die, " +
+					"but is instead an offset of a null die, a padding die, " +
+					"or of some random zero byte");
 
-				case DW_DLV_NO_ENTRY:
-					return null;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_die_text", code);
-			}
-		}
+		public string Text(AttributeNumber attr)
+			=> Wrapper.dwarf_die_text(
+					Handle, (ushort)attr,
+					out string name, out IntPtr error
+				).handleOpt("dwarf_die_text", error)
+				? name
+				: null;
 
 		/// <summary>
 		/// Determines if this DIE has the attribute <paramref name="number"/>
@@ -327,21 +212,10 @@ namespace Dwarf
 		/// An attribute number
 		/// </param>
 		public bool HasAttribute(AttributeNumber number)
-		{
-			int code;
-			switch(code = Wrapper.dwarf_hasattr(handle, (ushort)number,
-				out int has, out IntPtr error))
-			{
-				case DW_DLV_OK:
-					return has != 0;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_hasattr", code);
-			}
-		}
+			=> Wrapper.dwarf_hasattr(
+					Handle, (ushort)number,
+					out int ret, out IntPtr error
+				).handle("dawrf_hasattr", error, ret != 0);
 
 		/// <summary>
 		/// Retrieves an attribute of this DIE
@@ -352,26 +226,13 @@ namespace Dwarf
 		/// Returns null if this DIE does not have that attribute
 		/// </returns>
 		/// <exception cref="DwarfException"></exception>
-		public Attribute GetAttribute(ushort number)
-		{
-			int code;
-			switch(code = Wrapper.dwarf_attr(handle, number,
-				out IntPtr attr, out IntPtr error))
-			{
-				case DW_DLV_OK:
-					return new Attribute(this, attr);
-
-				case DW_DLV_NO_ENTRY:
-					return null;
-
-				case DW_DLV_ERROR:
-					throw DwarfException.Wrap(error);
-
-				default:
-					throw DwarfException.BadReturn("dwarf_attr", code);
-			}
-		}
-
+		public Attribute GetAttribute(AttributeNumber number)
+			=> Wrapper.dwarf_attr(
+					Handle, (ushort)number,
+					out IntPtr retAttr, out IntPtr error
+				).handleOpt("dwarf_attr", error)
+				? new Attribute(this, retAttr)
+				: null;
 
 #endregion
 	}

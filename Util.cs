@@ -8,40 +8,71 @@ namespace Dwarf
 {
 	internal static class Util
 	{
+		/// <summary>
+		/// Delegate representing a libdwarf getter
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="ret"></param>
+		/// <param name="error"></param>
+		/// <returns></returns>
 		public delegate int getter<T>(out T ret, out IntPtr error);
-		public delegate int hGetter<T>(IntPtr handle, out T ret, out IntPtr error);
-		public delegate int getter<A, B, C>(out A a, out B b, out C c, out IntPtr error);
-
-		public static T wrapGetter<T>(hGetter<T> h, string name, IntPtr handle)
-			=> wrapGetter(
-				(out T val, out IntPtr error) => h(handle, out val, out error),
-				name);
 
 		public static T wrapGetter<T>(getter<T> f, string name)
 		{
-			wrapGetter(f, name, out T val);
+			f(out T val, out IntPtr error).handle(name, error);
 			return val;
 		}
 
-		public static bool wrapGetter<T>(getter<T> f, string name, out T val, bool allowNone = false)
+		public static bool wrapGetter<T>(getter<T> f, string name, out T val)
+			=> f(out val, out IntPtr error).handleOpt(name, error);
+
+		/// <summary>
+		/// Handles a libdwarf return code.
+		/// Throws a DwarfException on error
+		/// </summary>
+		/// <param name="code"></param>
+		/// <param name="func"></param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		public static bool handleOpt(this int code, string func, IntPtr error)
 		{
-			int code;
-			switch(code = f(out val, out IntPtr error))
+			switch(code)
 			{
 				case DW_DLV_OK:
 					return true;
 
 				case DW_DLV_NO_ENTRY:
-					if(allowNone)
-						return false;
-				goto default;
+					return false;
 
 				case DW_DLV_ERROR:
 					throw DwarfException.Wrap(error);
 
 				default:
-					throw DwarfException.BadReturn(name, code);
+					throw DwarfException.BadReturn(func, code);
+
 			}
+		}
+
+		public static void handle(this int code, string func, IntPtr error)
+		{
+			if(!handleOpt(code, func, error))
+				throw DwarfException.BadReturn(func, DW_DLV_NO_ENTRY);
+		}
+
+		/// <summary>
+		/// Like <see cref="handle(int,string,IntPtr)"/>but returns the passed in
+		/// <paramref name="value"/> paremeter (for simpler method chaining)
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="code"></param>
+		/// <param name="func"></param>
+		/// <param name="error"></param>
+		/// <param name="value"></param>
+		/// <returns></returns>
+		public static T handle<T>(this int code, string func, IntPtr error, T value)
+		{
+			handle(code, func, error);
+			return value;
 		}
 
 		/// <summary>

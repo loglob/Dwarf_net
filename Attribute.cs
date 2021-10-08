@@ -9,22 +9,16 @@ namespace Dwarf
 	/// <summary>
 	/// A DWARF attribute
 	/// </summary>
-	public class Attribute
+	public class Attribute : HandleWrapper
 	{
 		private delegate int discr_entry<T>(IntPtr head, ulong index,
 			out ushort type, out T low, out T high, out IntPtr error);
 
 #region Fields
 		/// <summary>
-		/// The opaque pointer returned by libdwarf 
+		/// The Die this attribute is from.
 		/// </summary>
-		internal IntPtr handle;
-
-		/// <summary>
-		/// The DIE this attribute is from.
-		/// Mainly used to implicitely force GC order
-		/// </summary>
-		internal Die die;
+		public readonly Die Die;
 #endregion
 
 #region Properties
@@ -37,7 +31,7 @@ namespace Dwarf
 		/// <summary>
 		/// The address this attribute represents.
 		/// Throws a <see cref="DwarfException"/> if the Attribute
-		/// doesn't belong to the <see cref="FormClass.Address"/> class 
+		/// doesn't belong to the <see cref="FormClass.Address"/> class
 		/// </summary>
 		ulong Address
 			=> wrapGetter<ulong>(Wrapper.dwarf_formaddr, "dwarf_formaddr");
@@ -178,7 +172,7 @@ namespace Dwarf
 		{
 			get
 			{
-				var v = die.Version;
+				var v = Die.Version;
 				return Wrapper.dwarf_get_form_class(
 					v.Version, Number, v.OffsetSize, (ushort)Form);
 			}
@@ -186,43 +180,34 @@ namespace Dwarf
 
 #endregion
 
-		internal Attribute(Die die, IntPtr handle)
-		{
-			this.die = die;
-			this.handle = handle;
-		}
+		internal Attribute(Die die, IntPtr handle) : base(handle)
+			=> Die = die;
 
 		~Attribute()
-			=> Wrapper.dwarf_dealloc_attribute(handle);
-		
-		private T wrapGetter<T>(hGetter<T> f, string name)
-			=> Util.wrapGetter(f, name, handle);
-	
+			=> Wrapper.dwarf_dealloc_attribute(Handle);
+
 		private (ushort, T, T)[] discriminants<T>(discr_entry<T> e, string name)
 		{
 			var bp = wrapGetter<IntPtr>(Wrapper.dwarf_formblock, "dwarf_formblock");
 			var b = Marshal.PtrToStructure<Wrapper.Block>(bp);
 
-			if(!Util.wrapGetter(
-				(out (IntPtr h, ulong l) v, out IntPtr error)
-					=> Wrapper.dwarf_discr_list(die.debug.handle, b.bl_data, b.bl_len,
-						out v.h, out v.l, out error),
-					"dwarf_discr_list",
-					out (IntPtr head, ulong len) dl, true))
+			if(!Wrapper.dwarf_discr_list(
+					Die.debug.Handle, b.bl_data, b.bl_len,
+					out IntPtr head, out ulong len, out IntPtr error)
+				.handleOpt("dwarf_discr_list", error))
 			{
-				Wrapper.dwarf_dealloc(die.debug.handle, bp, DW_DLA_BLOCK);	
+				Die.debug.Dealloc(bp, DW_DLA_BLOCK);
 				return new (ushort, T, T)[0];
 			}
-	
-			var r = Naturals.Select(i
-				=> Util.wrapGetter(
-					(out (ushort t, T l, T h) v, out IntPtr err)
-						=> e(dl.head, (uint)i, out v.t, out v.l, out v.h, out err),
-					name))
-				.ToArray((int)dl.len);
 
-			Wrapper.dwarf_dealloc(die.debug.handle, bp, DW_DLA_BLOCK);	
-			Wrapper.dwarf_dealloc(die.debug.handle, dl.head, DW_DLA_DSC_HEAD);
+			var r = Naturals
+				.Select(i
+					=> e(head, (uint)i, out ushort t, out T l, out T h, out IntPtr error)
+						.handle(name, error, (t, l, h)))
+				.ToArray((int)len);
+
+			Die.debug.Dealloc(bp, DW_DLA_BLOCK);
+			Die.debug.Dealloc(head, DW_DLA_DSC_HEAD);
 
 			return r;
 		}

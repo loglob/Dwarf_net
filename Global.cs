@@ -19,7 +19,7 @@ namespace Dwarf
 	/// <summary>
 	/// A descriptors for queries about global names (pubnames).
 	/// </summary>
-	public class Global
+	public class Global : HandleWrapper
 	{
 		private IntPtr handle;
 
@@ -29,11 +29,8 @@ namespace Dwarf
 		/// </summary>
 		private Debug debug;
 
-		internal Global(Debug debug, IntPtr handle)
-		{
-			this.debug = debug;
-			this.handle = handle;
-		}
+		internal Global(Debug debug, IntPtr handle) : base(handle)
+			=> this.debug = debug;
 
 		/// <summary>
 		/// For each CU represented in .debug_pubnames, etc, there is a .debug_pubnames header.
@@ -71,9 +68,11 @@ namespace Dwarf
 		{
 			get
 			{
-				var namePtr = Util.wrapGetter<IntPtr>(Wrapper.dwarf_globname, "dwarf_globname", handle);
+				var namePtr = wrapGetter<IntPtr>(Wrapper.dwarf_globname, "dwarf_globname");
 				var name = Marshal.PtrToStringUTF8(namePtr);
-				Wrapper.dwarf_dealloc(debug.handle, namePtr, DW_DLA_STRING);
+				
+				debug.Dealloc(namePtr, DW_DLA_STRING);
+
 				return name;
 			}
 		}
@@ -82,13 +81,13 @@ namespace Dwarf
 		/// The offset in the section containing DIEs, i.e. .debug_info, of the DIE representing the pubname of this Global
 		/// </summary>
 		public ulong DieOffset
-			=> Util.wrapGetter<ulong>(Wrapper.dwarf_global_die_offset, "dwarf_global_die_offset", handle);
+			=> wrapGetter<ulong>(Wrapper.dwarf_global_die_offset, "dwarf_global_die_offset");
 
 		/// <summary>
 		/// The offset in the section containing DIEs, i.e. .debug_info, of the compilation-unit
 		/// header of the compilation-unit that contains the pubname of this Global
 		/// </summary>
 		public ulong CUOffset
-			=> Util.wrapGetter<ulong>(Wrapper.dwarf_global_cu_offset, "dwarf_global_cu_offset", handle);
+			=> wrapGetter<ulong>(Wrapper.dwarf_global_cu_offset, "dwarf_global_cu_offset");
 	}
 }
