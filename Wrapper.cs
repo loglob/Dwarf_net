@@ -3160,6 +3160,7 @@ namespace Dwarf_net
 	#region Accelerated Access By Name operations (6.16)
 	/* Omitted functions:
 		* dwarf_return_empty_pubnames
+		* dwarf_global_name_offsets - Unneeded compound getter
 		* dwarf_get_cu_die_offset_given_cu_header_offset
 		* dwarf_pubtype_type_die_offset, dwarf_pubtype_cu_offset, dwarf_pubtypename:
 			replaced by dwarf_pubtype_name_offsets
@@ -3337,44 +3338,6 @@ namespace Dwarf_net
 			ulong in_cu_header_offset,
 			int is_info,
 			out ulong out_cu_die_offset,
-			out IntPtr error
-		);
-
-		/// <summary>
-		/// If a portion of .debug_pubnames ( or .debug_types etc) represents a compilation unit with
-		/// no names there is a .debug_pubnames header there with no content. In that case a single
-		/// Dwarf_Global record is created with the value of *die_offset zero and the name-pointer
-		/// returned points to the empty string. A zero is never a valid DIE offset, so zero always
-		/// means this is an uninteresting (Dwarf_Global).
-		/// </summary>
-		/// <param name="global"></param>
-		/// <param name="return_name">
-		/// The name of the pubname described by the Dwarf_Global descriptor <paramref name="global"/>
-		/// <br/>
-		/// Freed using <see cref="dwarf_dealloc"/>,
-		/// with the allocation type <see cref="DW_DLA_STRING"/>
-		/// </param>
-		/// <param name="die_offset">
-		/// The global offset of the DIE representing the pubname
-		/// </param>
-		/// <param name="cu_die_offset">
-		/// The offset of the DIE representing the compilation-unit containing the pubname
-		/// </param>
-		/// <param name="error"></param>
-		/// <returns>
-		/// <see cref="DW_DLV_OK"/> on success.
-		/// <br/>
-		/// <see cref="DW_DLV_ERROR"/> on error
-		/// <br/>
-		/// never returns <see cref="DW_DLV_NO_ENTRY"/>
-		/// </returns>
-		[DllImport(lib)]
-		public static extern int dwarf_global_name_offsets(
-			IntPtr global,
-			[MarshalAs(UnmanagedType.CustomMarshaler, MarshalTypeRef = typeof(StaticStringMarshaler))]
-			out string return_name,
-			out ulong die_offset,
-			out ulong cu_die_offset,
 			out IntPtr error
 		);
 
