@@ -1,6 +1,6 @@
 using System;
 
-namespace Dwarf_net.Exceptions
+namespace Dwarf.Exceptions
 {
 	/// <summary>
 	/// No line section

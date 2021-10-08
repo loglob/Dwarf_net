@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using static Dwarf_net.Defines;
+using static Dwarf.Defines;
 
-namespace Dwarf_net
+namespace Dwarf
 {
 	public class Debug
 	{

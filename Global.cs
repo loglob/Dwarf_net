@@ -1,9 +1,9 @@
 
 using System;
 using System.Runtime.InteropServices;
-using static Dwarf_net.Defines;
+using static Dwarf.Defines;
 
-namespace Dwarf_net
+namespace Dwarf
 {
 	public struct GlobalHeader
 	{

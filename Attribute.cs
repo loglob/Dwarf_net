@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using static Dwarf_net.Defines;
-using static Dwarf_net.Util;
+using static Dwarf.Defines;
+using static Dwarf.Util;
 
-namespace Dwarf_net
+namespace Dwarf
 {
 	/// <summary>
 	/// A DWARF attribute

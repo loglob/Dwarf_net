@@ -1,9 +1,9 @@
 using System;
-using Dwarf_net.Exceptions;
+using Dwarf.Exceptions;
 using System.IO;
-using static Dwarf_net.Defines;
+using static Dwarf.Defines;
 
-namespace Dwarf_net
+namespace Dwarf
 {
 	public class DwarfException : Exception
 	{

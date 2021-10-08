@@ -1,6 +1,6 @@
 using System;
 
-namespace Dwarf_net.Exceptions
+namespace Dwarf.Exceptions
 {
 	/// <summary>
 	/// The Version of DWARF information was never than that of libdwarf
