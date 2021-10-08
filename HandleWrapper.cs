@@ -1,6 +1,5 @@
 
 using System;
-using static Dwarf.Defines;
 
 namespace Dwarf
 {
@@ -21,10 +20,10 @@ namespace Dwarf
 
 		internal delegate int getter<T>(IntPtr handle, out T value, out IntPtr error);
 
-		internal T wrapGetter<T>(getter<T> g, string func)
-			=> g(Handle, out T v, out IntPtr err).handle(func, err, v);
+		internal T wrapGetter<T>(getter<T> g)
+			=> g(Handle, out T v, out IntPtr err).handle(g.Method.Name, err, v);
 
-		internal bool wrapGetter<T>(getter<T> g, string func, out T val)
-			=> g(Handle, out val, out IntPtr err).handleOpt(func, err);
+		internal bool wrapGetter<T>(getter<T> g, out T val)
+			=> g(Handle, out val, out IntPtr err).handleOpt(g.Method.Name, err);
 	}
 }

@@ -57,7 +57,7 @@ namespace Dwarf
 		{
 			get
 			{
-				if(wrapGetter(Wrapper.dwarf_child, "dwarf_child", out IntPtr kid))
+				if(wrapGetter(Wrapper.dwarf_child, out IntPtr kid))
 				{
 					var child = new Die(debug, kid);
 					return child.Siblings.Prepend(child);
@@ -71,7 +71,7 @@ namespace Dwarf
 		/// The tag of this DIE.
 		/// </summary>
 		public Tag Tag
-			=> (Tag)wrapGetter<ushort>(Wrapper.dwarf_tag, "dwarf_tag");
+			=> (Tag)wrapGetter<ushort>(Wrapper.dwarf_tag);
 
 		/// <summary>
 		/// The position of this DIE in the section containing debugging information entries
@@ -97,7 +97,7 @@ namespace Dwarf
 		/// May be null is this DIE does not have a name attribute.
 		/// </summary>
 		public string Name
-			=> wrapGetter(Wrapper.dwarf_diename, "dwarf_diename", out string name)
+			=> wrapGetter(Wrapper.dwarf_diename, out string name)
 				? name
 				: null;
 
@@ -211,7 +211,7 @@ namespace Dwarf
 			=> Wrapper.dwarf_hasattr(
 					Handle, (ushort)number,
 					out int ret, out IntPtr error
-				).handle("dawrf_hasattr", error, ret != 0);
+				).handle("dwarf_hasattr", error, ret != 0);
 
 		/// <summary>
 		/// Retrieves an attribute of this DIE
