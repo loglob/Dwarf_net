@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using static Dwarf.Defines;
-using static Dwarf.MacroInformationEntryType;
+using static Dwarf.MacroOpcode;
 
 namespace Dwarf
 {
@@ -3838,7 +3838,8 @@ namespace Dwarf
 		/// <param name="has_line_offset">
 		/// set to non-zero if the debug_line_offset_flag bit is set in the flags
 		/// field of the macro unit header.
-		/// <br/>
+		/// </param>
+		/// <param name="line_offset">
 		/// If has_line_offset is set then line_offset is set to the value of the
 		/// debug_line_offset field in the macro unit header.
 		/// <br/>
@@ -3877,6 +3878,7 @@ namespace Dwarf
 			out ulong mac_header_len,
 			out uint flags,
 			out int has_line_offset,
+			out ulong line_offset,
 			out int has_offset_size_64,
 			out int has_operands_table,
 			out ushort opcode_count,

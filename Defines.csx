@@ -100,7 +100,7 @@ static readonly (string prefix, string enumName)[] enumPrefixes = {
 	("DW_LNS_", "LineNumberStandardOpcode"),
 	("DW_LNE_", "LineNumberExtendedOpcode"),
 	("DW_LNCT_", "LineNumberHeaderEntryFormat"),
-	("DW_MACRO_", "MacroInformationEntryType"),
+	("DW_MACRO_", "MacroOpcode"),
 	("DW_CFA_", "CallFrameInstruction"),
 	("DW_RLE_", "RangeListEntry")
 };
