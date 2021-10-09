@@ -98,5 +98,21 @@ namespace Dwarf
 			return arr;
 		}
 
+		/// <summary>
+		/// Reads a pointer as a C-style array, using default Marshaling
+		/// </summary>
+		/// <typeparam name="T"></typeparam>
+		/// <param name="array"></param>
+		/// <param name="length"></param>
+		/// <returns></returns>
+		public static T[] PtrToArray<T>(this IntPtr array, long length)
+		{
+			var arr = new T[length];
+
+			for (int i = 0; i < length; i++)
+				arr[i] = Marshal.PtrToStructure<T>(array + i * Marshal.SizeOf<T>());
+
+			return arr;
+		}
 	}
 }
