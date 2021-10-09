@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using static Dwarf.Defines;
+using static Dwarf.MacroInformationEntryType;
 
 namespace Dwarf
 {
@@ -3158,14 +3159,9 @@ namespace Dwarf
 	#endregion //Get Information About a Single Line Table Line (6.15)
 
 	#region Accelerated Access By Name operations (6.16)
-	/* Omitted functions:
-		* dwarf_return_empty_pubnames
-		* dwarf_global_name_offsets - Unneeded compound getter
-		* dwarf_get_cu_die_offset_given_cu_header_offset
-		* dwarf_pubtype_type_die_offset, dwarf_pubtype_cu_offset, dwarf_pubtypename:
-			replaced by dwarf_pubtype_name_offsets
-		* Accelerated Access for Weak-, Func-, Type-, var-names: non-standard
-	*/
+
+		#region Fine Tuning Accelerated Access (6.16.1)
+		// Omitted dwarf_return_empty_pubnames()
 
 		/// <summary>
 		/// For each CU represented in .debug_pubnames, etc, there is a .debug_pubnames header.
@@ -3198,6 +3194,14 @@ namespace Dwarf
 			out ulong info_length,
 			out IntPtr error
 		);
+
+		#endregion // Fine Tuning Accelerated Access (6.16.1)
+
+		#region Accelerated Access Pubnames (6.16.2)
+		/* Omitted functions:
+			* dwarf_get_cu_die_offset_given_cu_header_offset
+			* dwarf_global_name_offsets - Unneeded compound getter
+		*/
 
 		/// <summary>
 		/// This is .debug_pubnames and is standard DWARF2, DWARF3, and DWARF4.
@@ -3334,12 +3338,22 @@ namespace Dwarf
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_get_cu_die_offset_given_cu_header_offset_b(
+			/* NOTE: There is an error in the doc PDF where this
+				function is listed without the proper _b suffix */
 			IntPtr dbg,
 			ulong in_cu_header_offset,
 			int is_info,
 			out ulong out_cu_die_offset,
 			out IntPtr error
 		);
+
+		#endregion // Accelerated Access Pubnames (6.16.2)
+
+		#region Accelerated Access Pubtypes (6.16.3)
+		/* Omitted functions:
+			* dwarf_pubtype_type_die_offset, dwarf_pubtype_cu_offset, dwarf_pubtypename:
+				replaced by dwarf_pubtype_name_offsets
+		*/
 
 		/// <summary>
 		/// The returned results are for the entire section
@@ -3411,6 +3425,22 @@ namespace Dwarf
 			out ulong cu_offset,
 			out IntPtr error
 		);
+
+		#endregion // Accelerated Access Pubtypes (6.16.3)
+
+		/* Omitted sections:
+			Accelerated Access Weak-, Func-, Type- and varnames (6.16.4-7):
+				not part of any DWARF standard
+		*/
+
+	#endregion //Accelerated Access By Name operations (6.16)
+
+	#region Names Fast Access (DWARF5 .debug_names) (6.17)
+	/* The following documentation is a complete copy
+		 of the libdwarf docs for this section.
+		I have no idea what the fields are supposed to mean,
+		 or if I interpreted intended pointer semantics correctly.
+	*/
 
 		/// <summary>
 		/// Allocates an opaque data structure used in all the other debugnames calls.
@@ -3602,14 +3632,483 @@ namespace Dwarf
 		[DllImport(lib)]
 		public static extern int dwarf_debugnames_abbrev_by_code(
 			IntPtr dn,
-			ulong index_nubmer,
+			ulong index_number,
 			ulong abbrev_code,
 			out ulong tag,
 			out ulong index_of_abbrev,
 			out ulong index_of_attr_form_entries,
 			out IntPtr error
 		);
-	#endregion //Accelerated Access By Name operations (6.16)
+
+		/// <summary>
+		/// Allows retrieving the abbreviations forms from a portion of the section by index
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_form_by_index(
+			IntPtr dn,
+			ulong index_number,
+			ulong abbrev_entry_index,
+			ulong abbrev_form_index,
+			out ulong name_attr_index,
+			out ulong form,
+			out ulong number_of_attr_form_entries,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving the data from a portion of the entrypool by index a nd offset.
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_entrypool(
+			IntPtr dn,
+			ulong index_number,
+			ulong offset_in_entrypool,
+			out ulong abbrev_code,
+			out ulong tag,
+			out ulong value_count,
+			out ulong index_of_abbrev,
+			out ulong offset_of_initial_value,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Allows retrieving detailed data from a portion of the entrypool by index a nd offset.
+		/// </summary>
+		[DllImport(lib)]
+		public static extern int dwarf_debugnames_entrypool_values(
+			IntPtr dn,
+			ulong index_number,
+			ulong index_of_abbrev,
+			ulong offset_in_entrypool_of_values,
+			out ulong array_dw_idx_number,
+			out ulong array_form,
+			out ulong array_of_offsets,
+			out ulong array_of_signatures,
+			out IntPtr error
+		);
+
+	#endregion // Names Fast Access (DWARF5 .debug_names) (6.17)
+
+	/* Omitted region Names Fast Access .debug_gnu_pubnames (6.18):
+		not part of any DWARF standard
+	*/
+
+	#region Macro Information Operations (DWARF 4,5) (6.19)
+
+		#region Getting Access (6.19.1)
+
+		/// <summary>
+		/// Given a Compilation Unit (CU) DIE, opens a Dwarf_Macro_Context
+		/// and returns a pointer to it and some data from the macro unit for that CU.
+		/// The <see cref="macro_context"/> is used to get at the details of the macros.
+		/// </summary>
+		/// <param name="die">A Dwarf_Die </param>
+		/// <param name="version_out">
+		/// The DWARF version number of the macro data.
+		/// Version 5 means DWARF5 version information.
+		/// Version 4 means the DWARF5 format macro data is present
+		/// as an extension of DWARF4.
+		/// </param>
+		/// <param name="macro_context">
+		/// An opaque Dwarf_Macro_Context pointer
+		/// </param>
+		/// <param name="macro_unit_offset_out">
+		/// the offset in the .debug_macro section of the
+		/// first byte of macro data for this CU
+		/// <br/>
+		/// Macro unit is defined in the DWARF5 standard,
+		/// Section 6.3 Macro Information on page 165.
+		/// </param>
+		/// <param name="macro_ops_count_out">
+		/// the number of macro entries in the macro data data for this CU.
+		/// The count includes the final zero entry
+		/// (which is not really a macro, it is a terminator,
+		/// a zero byte ending the macro unit).
+		/// </param>
+		/// <param name="macro_ops_data_length_out">
+		/// The number of bytes of data in the set of ops
+		/// (not including macro_unit header bytes).
+		/// See <see cref="dwarf_macro_context_total_length"/>
+		/// to get the macro unit total length.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// If <see cref="DW_DLV_NO_ENTRY"/> is returned the CU has no
+		/// macro data attribute or there is no .debug_macro section present.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_macro_context(
+			IntPtr die,
+			out ulong version_out,
+			out IntPtr macro_context,
+			out ulong macro_unit_offset_out,
+			out ulong macro_ops_count_out,
+			out ulong macro_ops_data_length_out,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Given a Compilation Unit (CU) die and the offset of
+		/// an imported macro unit, opens a Dwarf_Macro_Context
+		/// and returns a pointer to it and some data from the
+		/// macro unit for that CU on success
+		/// <br/>
+		/// On success the function produces the same output values
+		/// as <see cref="dwarf_get_macro_context"/>.
+		/// </summary>
+		/// <returns>
+		/// If <see cref="DW_DLV_NO_ENTRY"/> is returned there is no
+		/// .debug_macro section present.
+		/// <br/>
+		/// On error <see cref="DW_DLV_ERROR"/> is returned and the
+		/// error details are returned through the pointer error
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_macro_context_by_offset(
+			IntPtr die,
+			ulong offset,
+			out ulong version_out,
+			out IntPtr macro_context,
+			out ulong macro_ops_count_out,
+			out ulong macro_ops_total_byte_len,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Sometimes consumers want to know the length of macro ops plus
+		/// the length of the DWARF5-style header.
+		/// </summary>
+		/// <param name="macro_context"></param>
+		/// <param name="total_length">
+		/// the total length of the DWARF5-style macro unit
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// It never returns <see cref="DW_DLV_NO_ENTRY"/>
+		/// <br/>
+		/// If <paramref name="macro_context"/> is NULL or invalid it returns
+		/// <see cref="DW_DLV_ERROR"/> and sets *error to an appropriate error value.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_macro_context_total_length(
+			IntPtr macro_context,
+			out ulong total_length,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// cleans up memory allocated by a successful call to
+		/// <see cref="dwarf_get_macro_context"/> or
+		/// <see cref="dwarf_get_macro_context_by_offset"/>.
+		/// </summary>
+		/// <param name="macro_context"></param>
+		[DllImport(lib)]
+		public static extern void dwarf_dealloc_macro_context(
+			IntPtr macro_context
+		);
+
+		#endregion // Getting Access (6.19.1)
+
+		#region Getting Macro Unit Header Data (6.19.2)
+
+		/// <summary>
+		/// Returns the basic fields of a macro unit header (Macro Information Header)
+		/// </summary>
+		/// <param name="macro_context"></param>
+		/// <param name="version">
+		/// The DWA RF version number of the macro unit header.
+		/// Version 5 means DWA RF5 version information.
+		/// Version 4 means the DWARF5 format macro data is present
+		/// as an extension of DWARF4.
+		/// </param>
+		/// <param name="mac_offset">
+		/// The offset in the .debug_macro section of the first byte
+		/// of macro data for this CU
+		/// </param>
+		/// <param name="mac_len">
+		/// the number of bytes of data in the macro unit, including the macro unit header
+		/// </param>
+		/// <param name="mac_header_len">
+		/// the number of bytes in the macro unit header
+		/// (not a field that is generally useful)
+		/// </param>
+		/// <param name="flags">
+		/// the value of the flags field of the macro unit header
+		/// </param>
+		/// <param name="has_line_offset">
+		/// set to non-zero if the debug_line_offset_flag bit is set in the flags
+		/// field of the macro unit header.
+		/// <br/>
+		/// If has_line_offset is set then line_offset is set to the value of the
+		/// debug_line_offset field in the macro unit header.
+		/// <br/>
+		/// If has_line_offset is not set there is no debug_line_offset field present
+		/// in the macro unit header.
+		/// </param>
+		/// <param name="has_offset_size_64">
+		/// Set non-zero if the offset_size_flag bit is set in the flags field
+		/// of the macro unit header and in this case offset fields in this macro
+		/// unit are 64 bits.
+		/// <br/>
+		/// If has_offset_size_64 is not set then offset fields in this macro unit
+		/// are 32 bits
+		/// </param>
+		/// <param name="has_operands_table">
+		/// set to non-zero if the opcod_operands_table_flag bit is set in the
+		/// flags field of the macro unit header
+		/// </param>
+		/// <param name="opcode_count">
+		/// If <paramref name="has_operands_table"/> is set non-zero then
+		/// <paramref name="opcode_count"/> is set to the number of opcodes in the
+		/// macro unit header opcode_operands_table.
+		/// <br/>
+		/// See <see cref="dwarf_get_macro_op"/>
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_NO_ENTRY"/> is not returned.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_macro_context_head(
+			IntPtr macro_context,
+			out ushort version,
+			out ulong mac_offset,
+			out ulong mac_len,
+			out ulong mac_header_len,
+			out uint flags,
+			out int has_line_offset,
+			out int has_offset_size_64,
+			out int has_operands_table,
+			out ushort opcode_count,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Used to index through the operands table in a macro unit header
+		/// if the operands table exists in the macro unit header.
+		/// <br/>
+		/// The operands table provides the mechanism for implementations to
+		/// add extensions to the macro operations while allowing clients to
+		/// skip macro operations the client code does not recognize.
+		/// </summary>
+		/// <param name="macro_context">
+		/// The macro unit involved
+		/// </param>
+		/// <param name="index">
+		/// Identifies which macro operand to look at.
+		/// <br/>
+		/// Valid index values are zero through the opcode_count-1
+		/// (returned by <see cref="dwarf_macro_context_head"/>).
+		/// </param>
+		/// <param name="opcode_number">
+		/// The macro operation code.
+		/// The operation code could be one of the standard codes or
+		/// if there are user extensions there would be an extension code
+		/// in the <see cref="MacroInformationEntryType.LoUser"/>
+		/// to <see cref="MacroInformationEntryType.HiUser"/> range
+		/// </param>
+		/// <param name="operand_count">
+		/// The number of form codes in the form codes array
+		/// of unsigned bytes <paramref name="operand_array"/>
+		/// </param>
+		/// <param name="operand_array">
+		/// Actual type: const Dwarf_Small** / out const char* / out byte[]
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_macro_operands_table(
+			IntPtr macro_context,
+			ushort index,
+			out ushort opcode_number,
+			out ushort operand_count,
+			out IntPtr operand_array,
+			out IntPtr error
+		);
+
+		#endregion // Getting Macro Unit Header Data (6.19.2)
+
+		#region Getting Individual Macro Operations Data (6.19.3)
+
+		/// <summary>
+		/// Used to access the macro operations of this macro unit.
+		/// </summary>
+		/// <param name="macro_context">
+		/// The macro unit involved
+		/// </param>
+		/// <param name="op_number">
+		/// identifies which macro operand to look at.
+		/// Valid index values are zero through macro_ops_count_out-1
+		/// (field returned by <see cref="dwarf_get_macro_context"/>
+		/// or <see cref="dwarf_get_macro_context_by_offset"/>)
+		/// </param>
+		/// <param name="op_start_section_offset"></param>
+		/// <param name="macro_operator">
+		/// One of the defined macro operations such as
+		/// <see cref="Undef"/>.
+		/// This is the field you will use to choose what call to use to get
+		/// the data for a macro operator.
+		/// For example, for <see cref="Undef"/>
+		/// one would call <see cref="dwarf_get_macro_defundef"/> (see below)
+		/// to get the details about the undefine.
+		/// </param>
+		/// <param name="forms_count">
+		/// Useful for debugging but otherwise is not normally useful.
+		/// It is the number of bytes of form numbers in the
+		/// <paramref name="formcode_array"/> of this macro operator’s applicable forms
+		/// </param>
+		/// <param name="formcode_array">
+		/// Actual type: const Dwarf_Small** / out const char* / out byte[]
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// <see cref="DW_DLV_NO_ENTRY"/> is not returned.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_macro_op(
+			IntPtr macro_context,
+			ulong op_number,
+			out ulong op_start_section_offset,
+			out ushort macro_operator,
+			out ushort forms_count,
+			out IntPtr formcode_array,
+			out IntPtr error 
+		);
+
+		/// <summary>
+		/// Called for any of the macro define/undefine operators.
+		/// Which fields are set through the pointers depends on the particular operator
+		/// </summary>
+		/// <param name="macro_context">The macro unit involved</param>
+		/// <param name="op_number">
+		/// identifies which macro operand to look at.
+		/// Valid index values are zero through macro_ops_count_out-1
+		/// (field returned by <see cref="dwarf_get_macro_context"/>
+		/// or <see cref="dwarf_get_macro_context_by_offset"/>)
+		/// </param>
+		/// <param name="line_number">
+		/// The source line number of the macro
+		/// </param>
+		/// <param name="index">
+		/// Only set if the macro operator is
+		/// <see cref="DefineStrx"/>
+		/// or <see cref="UndefStrx"/>
+		/// <br/>
+		/// If set it is an index into an array of offsets in the
+		/// .debug_str_offsets section.
+		/// </param>
+		/// <param name="offset">
+		/// Only set if the macro operator is
+		/// <see cref="DefineStrx"/>,
+		/// <see cref="DefineStrp"/>,
+		/// <see cref="UndefStrx"/>,
+		/// or <see cref="UndefStrp"/>
+		/// <br/>
+		/// If set it is an offset of a string in the .debug_str section.
+		/// </param>
+		/// <param name="forms_count">
+		/// The number of forms that apply to the macro operator
+		/// </param>
+		/// <param name="macro_string">
+		/// a pointer to the macro string.
+		/// If the actual string cannot be found
+		/// (as when section with the string is in a different object,
+		/// see <see cref="set_tied_dbg"/>)
+		/// the string returned may be "<:No string available>"
+		/// or "<.debug_str_offsets not available>" (without the quotes).
+		/// </param>
+		/// <returns>
+		/// <see cref="DW_DLV_NO_ENTRY"/> if the macro operation is not one of the
+		/// define/undef operations.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_macro_defundef(
+			IntPtr macro_context,
+			ulong op_number,
+			out ulong line_number,
+			out ulong index,
+			out ulong offset,
+			out ushort forms_count,
+			[MarshalAs(UnmanagedType.CustomMarshaler,
+				MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string macro_string,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Called for operators <see cref="StartFile"/> or <see cref="EndFile"/>
+		/// </summary>
+		/// <param name="macro_context">The macro unit involved</param>
+		/// <param name="op_number">
+		/// identifies which macro operand to look at.
+		/// Valid index values are zero through macro_ops_count_out-1
+		/// (field returned by <see cref="dwarf_get_macro_context"/>
+		/// or <see cref="dwarf_get_macro_context_by_offset"/>)
+		/// </param>
+		/// <param name="line_number">
+		/// The source line number of the macro
+		/// </param>
+		/// <param name="name_index_to_line_tab">
+		/// the index i nto the file name table of the line table section.
+		/// For DWARF2, DWARF3, DWARF4 line tables the index value assumes
+		/// DWARF2 line table header rules
+		/// (identical to DWARF3, DWARF4 line table header rules).
+		/// For DWARF5 the index value assumes DWARF5 line table header rules.
+		/// </param>
+		/// <param name="src_file_name">
+		/// The source file name.
+		/// If the index seems wrong or the line table is unavailable
+		/// the name returned is "<no-source-file-name-available>"
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_NO_ENTRY"/> if the macro operation is
+		/// not one of the start/end operations.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_macro_startend_file(
+			IntPtr macro_context,
+			ulong op_number,
+			out ulong line_number,
+			out ulong name_index_to_line_tab,
+			[MarshalAs(UnmanagedType.CustomMarshaler,
+				MarshalTypeRef = typeof(StaticStringMarshaler))]
+			out string src_file_name,
+			out IntPtr error
+		);
+
+		/// <summary>
+		/// Called for operators <see cref="Import"/> or <see cref="ImportSup"/>.
+		/// </summary>
+		/// <param name="macro_context">The macro unit involved</param>
+		/// <param name="op_number">
+		/// identifies which macro operand to look at.
+		/// Valid index values are zero through macro_ops_count_out-1
+		/// (field returned by <see cref="dwarf_get_macro_context"/>
+		/// or <see cref="dwarf_get_macro_context_by_offset"/>)
+		/// </param>
+		/// <param name="target_offset">
+		/// The offset in the referenced section.
+		/// For <see cref="Import"/> the referenced section
+		/// is the same section as the macro operation referenced here.
+		/// For <see cref="ImportSup"/> the referenced section is in a supplementary object.
+		/// </param>
+		/// <param name="error"></param>
+		/// <returns>
+		/// Returns <see cref="DW_DLV_NO_ENTRY"/> if the macro operation is
+		/// not one of the import operations.
+		/// </returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_macro_import(
+			IntPtr macro_context,
+			ulong op_number,
+			out ulong target_offset,
+			out IntPtr error
+		);
+
+		#endregion // Getting Individual Macro Operations Data (6.19.3)
+
+	#endregion // Macro Information Operations (DWARF 4,5) (6.19)
 
 	#region Utility Operations (6.36)
 
