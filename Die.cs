@@ -161,9 +161,81 @@ namespace Dwarf
 				: throw new InvalidOperationException(
 					"This Compilation Unit has no macro data attribute " +
 					"or there is no .debug_macro section present.");
-		#endregion
 
-		#region Constructors
+		/// <summary>
+		/// Attributes with form <see cref="Form.Addrx"/>, the operation <see cref="Operation.Addrx"/>,
+		/// or certain of the split-dwarf location list entries give an index value to a machine
+		/// address in the .debug_addr section (which is always in .debug_addr even when the
+		/// form/operation are in a split dwarf .dwo section).
+		/// <br/>
+		/// This turns such an index into a target address value.
+		/// Can be called on any DIE in the correct CU.
+		/// </summary>
+		/// <param name="index"> Such an index </param>
+		/// <returns> The target address value </returns>
+		/// <exception cref="InvalidOperationException">
+		/// If there is no available .debug_addr section
+		/// </exception>
+		public ulong AddressIndexToAddress(ulong index)
+			=> Wrapper.dwarf_debug_addr_index_to_addr(
+				Handle, index, out ulong addr, out IntPtr error
+			).handleOpt("dwarf_debug_addr_index_to_addr", error)
+			? addr
+			: throw new InvalidOperationException("This CU does not have a .debug_addr section");
+
+		/// <summary>
+		/// Determines the global offset of the DIE representing the Compilation Unit
+		/// this DIE belongs to. 
+		/// </summary>
+		public ulong CUDieOffset
+			=> wrapGetter<ulong>(Wrapper.dwarf_CU_dieoffset_given_die);
+
+		/// <summary>
+		/// Determines the global offset and length of the Compilation Unit containing this DIE
+		/// </summary>
+		public (ulong GlobalOffset, ulong Length) CUOffsetRange
+			=> Wrapper.dwarf_die_CU_offset_range(
+					Handle, out ulong off, out ulong len, out IntPtr error
+				).handle("dwarf_die_CU_offset_range", error, (off, len));
+
+		/// <summary>
+		/// The low program counter value associated with this DIE via the
+		/// <see cref="AttributeNumber.LowPc"/> attribute.
+		/// Returns null if that attribute isn't present.
+		/// </summary>
+		public ulong? LowProgramCounter
+			=> wrapGetter<ulong>(Wrapper.dwarf_lowpc, out ulong lowpc) ? lowpc : null;
+
+		/// <summary>
+		/// The high program counter via the <see cref="AttributeNumber.HighPc"/> attribute.
+		/// Is null if this DIE does not have that attribute.
+		/// <br/>
+		/// isOffset is true if the highPC value is an offset from <see cref="LowProgramCounter"/>,
+		/// false if it's an actual PC address
+		/// (1 higher than the address of the last pc in the address range)
+		/// </summary>
+		public (bool isOffset, ulong highPC)? HighProgramCounter
+			=> Wrapper.dwarf_highpc_b(
+					Handle,
+					out ulong highpc,
+					out _, out FormClass c,
+					out IntPtr error
+				).handleOpt("dwarf_highpc_b", error)
+					? (c == FormClass.Constant, highpc)
+					: null;
+
+		/// <summary>
+		/// The offset referred to by the <see cref="AttributeNumber.Type"/> attribute.
+		/// Returns null if that attribute doesn't exist.
+		/// </summary>
+		public ulong? TypeOffset
+			=> wrapGetter<ulong>(Wrapper.dwarf_dietype_offset, out ulong off)
+				? off
+				: null;
+
+#endregion
+
+#region Constructors
 		internal Die(Debug debug, IntPtr handle) : base(handle)
 			=> this.debug = debug;
 
@@ -212,6 +284,15 @@ namespace Dwarf
 					"but is instead an offset of a null die, a padding die, " +
 					"or of some random zero byte");
 
+		/// <summary>
+		/// Retrieves a string-value attribute with the given attribute number of this Die
+		/// </summary>
+		/// <param name="attr">
+		/// An attribute number
+		/// </param>
+		/// <returns>
+		/// null if that attribute doesn't exist
+		/// </returns>
 		public string Text(AttributeNumber attr)
 			=> Wrapper.dwarf_die_text(
 					Handle, (ushort)attr,
