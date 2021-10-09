@@ -142,9 +142,28 @@ namespace Dwarf
 			}
 		}
 
-#endregion
+		/// <summary>
+		/// Opens the DWARF macro context of a Compilation Unit (CU) DIE
+		/// </summary>
+		/// <exception cref="InvalidOperationException">
+		/// This CU has no macro data attribute, or no .debug_macro section is present
+		/// </exception>
+		public MacroContext MacroContext
+			=> Wrapper.dwarf_get_macro_context(
+					Handle,
+					out ulong version, out IntPtr context,
+					out ulong unitOffset,
+					out ulong opsCount,
+					out ulong opsDataLength,
+					out IntPtr error)
+				.handleOpt("dwarf_get_macro_context", error)
+				? new MacroContext(debug, context, version, unitOffset, opsCount, opsDataLength)
+				: throw new InvalidOperationException(
+					"This Compilation Unit has no macro data attribute " +
+					"or there is no .debug_macro section present.");
+		#endregion
 
-#region Constructors
+		#region Constructors
 		internal Die(Debug debug, IntPtr handle) : base(handle)
 			=> this.debug = debug;
 
@@ -229,6 +248,29 @@ namespace Dwarf
 				).handleOpt("dwarf_attr", error)
 				? new Attribute(this, retAttr)
 				: null;
+
+		/// <summary>
+		/// Opens an imported MacroContext of a Compilation Unit (CU) DIE
+		/// </summary>
+		/// <param name="offset">
+		/// The offset of an imported macro unit
+		/// </param>
+		/// <returns></returns>
+		/// <exception cref="InvalidOperationException">
+		/// If no .debug_macro section is present
+		/// </exception>
+		public MacroContext MacroContextAt(ulong offset)
+			=> Wrapper.dwarf_get_macro_context_by_offset(
+					Handle, offset,
+					out ulong version,
+					out IntPtr context,
+					out ulong opsCount,
+					out ulong opsTotalByteLen,
+					out IntPtr error)
+				.handleOpt("dwarf_get_macro_context_by_offset", error)
+				? new MacroContext(debug, context, version, offset, opsCount, opsTotalByteLen)
+				: throw new InvalidOperationException(
+					"There is no .debug_macro section present");
 
 #endregion
 	}
