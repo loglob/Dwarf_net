@@ -4,8 +4,28 @@ using static Dwarf.Defines;
 
 namespace Dwarf
 {
-	internal static class Util
+	public static class Util
 	{
+#region Public Utils
+
+		/// <summary>
+		/// Determines if a form is one of the indexed forms
+		/// (such as <see cref="Form.Addrx1"/>; there are several such in DWARF5).
+		/// <br/>
+		/// See DWARF5 section 7.5.5 Classes and Forms for more information
+		/// </summary>
+		/// <param name="form">
+		/// The relevant form code
+		/// </param>
+		/// <returns>
+		/// true if the form is indexed.
+		/// </returns>
+		public static bool IsIndexed(this Form form)
+			=> Wrapper.dwarf_addr_form_is_indexed((ushort)form) != 0;
+
+#endregion
+
+#region Internal Utils
 		/// <summary>
 		/// Handles a libdwarf return code,
 		/// allowing for a <see cref="DW_DLV_NO_ENTRY"/> return code.
@@ -21,7 +41,7 @@ namespace Dwarf
 		/// True if <paramref name="code"/> is <see cref="DW_DLV_OK"/>,
 		/// false if <see cref="DW_DLV_NO_ENTRY"/>
 		/// </returns>
-		public static bool handleOpt(this int code, string func, IntPtr error)
+		internal static bool handleOpt(this int code, string func, IntPtr error)
 		{
 			switch(code)
 			{
@@ -48,7 +68,7 @@ namespace Dwarf
 		/// <param name="func">The name of the called function</param>
 		/// <param name="error">The returned error</param>
 		/// <exception cref="Exception"/>
-		public static void handle(this int code, string func, IntPtr error)
+		internal static void handle(this int code, string func, IntPtr error)
 		{
 			if(!handleOpt(code, func, error))
 				throw DwarfException.BadReturn(func, DW_DLV_NO_ENTRY);
@@ -61,7 +81,7 @@ namespace Dwarf
 		/// <returns>
 		/// The <paramref name="value"/> parameter
 		/// </returns>
-		public static T handle<T>(this int code, string func, IntPtr error, T value)
+		internal static T handle<T>(this int code, string func, IntPtr error, T value)
 		{
 			handle(code, func, error);
 			return value;
@@ -84,7 +104,7 @@ namespace Dwarf
 		/// A mapping operation from array entries to the target type.
 		/// </param>
 		/// <returns></returns>
-		public static T[] PtrToArray<T>(this IntPtr array, long length, Func<IntPtr, T> f)
+		internal static T[] PtrToArray<T>(this IntPtr array, long length, Func<IntPtr, T> f)
 		{
 			var arr = new T[length];
 
@@ -105,7 +125,7 @@ namespace Dwarf
 		/// <param name="array"></param>
 		/// <param name="length"></param>
 		/// <returns></returns>
-		public static T[] PtrToArray<T>(this IntPtr array, long length)
+		internal static T[] PtrToArray<T>(this IntPtr array, long length)
 		{
 			var arr = new T[length];
 
@@ -114,5 +134,6 @@ namespace Dwarf
 
 			return arr;
 		}
+#endregion
 	}
 }
