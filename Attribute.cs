@@ -23,7 +23,7 @@ namespace Dwarf
 		/// <summary>
 		/// The attribute code represented by this attribute
 		/// </summary>
-		ushort Number
+		public ushort Number
 			=> wrapGetter<ushort>(Wrapper.dwarf_whatattr);
 
 		/// <summary>
@@ -31,7 +31,7 @@ namespace Dwarf
 		/// Throws a <see cref="DwarfException"/> if the Attribute
 		/// doesn't belong to the <see cref="FormClass.Address"/> class
 		/// </summary>
-		ulong Address
+		public ulong Address
 			=> wrapGetter<ulong>(Wrapper.dwarf_formaddr);
 
 		/// <summary>
