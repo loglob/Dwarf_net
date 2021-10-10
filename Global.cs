@@ -2,6 +2,7 @@
 using System;
 using System.Runtime.InteropServices;
 using static Dwarf.Defines;
+using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
@@ -41,7 +42,7 @@ namespace Dwarf
 				var h = new GlobalHeader();
 				int code;
 
-				switch(code = Wrapper.dwarf_get_globals_header(
+				switch(code = dwarf_get_globals_header(
 					Handle,
 					out h.OffsetPubHeader, out h.OffsetSize,
 					out h.LengthPub, out h.Version,
@@ -67,7 +68,7 @@ namespace Dwarf
 		{
 			get
 			{
-				var namePtr = wrapGetter<IntPtr>(Wrapper.dwarf_globname);
+				var namePtr = wrapGetter<IntPtr>(dwarf_globname);
 				var name = Marshal.PtrToStringUTF8(namePtr);
 				
 				debug.Dealloc(namePtr, DW_DLA_STRING);
@@ -80,13 +81,13 @@ namespace Dwarf
 		/// The offset in the section containing DIEs, i.e. .debug_info, of the DIE representing the pubname of this Global
 		/// </summary>
 		public ulong DieOffset
-			=> wrapGetter<ulong>(Wrapper.dwarf_global_die_offset);
+			=> wrapGetter<ulong>(dwarf_global_die_offset);
 
 		/// <summary>
 		/// The offset in the section containing DIEs, i.e. .debug_info, of the compilation-unit
 		/// header of the compilation-unit that contains the pubname of this Global
 		/// </summary>
 		public ulong CUOffset
-			=> wrapGetter<ulong>(Wrapper.dwarf_global_cu_offset);
+			=> wrapGetter<ulong>(dwarf_global_cu_offset);
 	}
 }

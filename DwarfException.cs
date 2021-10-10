@@ -2,6 +2,7 @@ using System;
 using Dwarf.Exceptions;
 using System.IO;
 using static Dwarf.Defines;
+using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
@@ -10,7 +11,7 @@ namespace Dwarf
 		internal IntPtr handle;
 
 		internal ulong Errno
-			=> Wrapper.dwarf_errno(handle);
+			=> dwarf_errno(handle);
 
 		internal DwarfException(string message) : this(IntPtr.Zero, message)
 		{}
@@ -25,9 +26,9 @@ namespace Dwarf
 		/// </summary>
 		public static Exception Wrap(IntPtr error)
 		{
-			var msg = Wrapper.dwarf_errmsg(error);
+			var msg = dwarf_errmsg(error);
 
-			switch(Wrapper.dwarf_errno(error))
+			switch(dwarf_errno(error))
 			{
 				case DW_DLE_VMM:
 					return new VersionMismatchException(error, msg);

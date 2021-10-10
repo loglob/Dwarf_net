@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using static Dwarf.Defines;
+using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
@@ -26,7 +27,7 @@ namespace Dwarf
 		/// If false, this die originated from the .debug_types section.
 		/// </summary>
 		public bool IsInfo
-			=> Wrapper.dwarf_get_die_infotypes_flag(Handle) != 0;
+			=> dwarf_get_die_infotypes_flag(Handle) != 0;
 
 		/// <summary>
 		/// All siblings of this DIE
@@ -39,7 +40,7 @@ namespace Dwarf
 
 				for (IntPtr cur = Handle; ;)
 				{
-					if(Wrapper.dwarf_siblingof_b(
+					if(dwarf_siblingof_b(
 							debug.Handle, cur, isInfo,
 							out cur, out IntPtr error
 					).handleOpt("dwarf_siblingof_b", error))
@@ -57,7 +58,7 @@ namespace Dwarf
 		{
 			get
 			{
-				if(wrapGetter(Wrapper.dwarf_child, out IntPtr kid))
+				if(wrapGetter(dwarf_child, out IntPtr kid))
 				{
 					var child = new Die(debug, kid);
 					return child.Siblings.Prepend(child);
@@ -71,7 +72,7 @@ namespace Dwarf
 		/// The tag of this DIE.
 		/// </summary>
 		public Tag Tag
-			=> (Tag)wrapGetter<ushort>(Wrapper.dwarf_tag);
+			=> (Tag)wrapGetter<ushort>(dwarf_tag);
 
 		/// <summary>
 		/// The position of this DIE in the section containing debugging information entries
@@ -80,7 +81,7 @@ namespace Dwarf
 		/// in the section containing dies i.e .debug_info
 		/// </summary>
 		public ulong GlobalOffset
-			=> Wrapper.dwarf_die_offsets(Handle, out ulong go, out _, out IntPtr error)
+			=> dwarf_die_offsets(Handle, out ulong go, out _, out IntPtr error)
 				.handle("dwarf_die_offsets", error, go);
 
 		/// <summary>
@@ -88,7 +89,7 @@ namespace Dwarf
 		/// rather than the start of .debug_info (i.e. it is a Compilation-Unit-relative offset).
 		/// </summary>
 		public ulong UnitOffset
-			=> Wrapper.dwarf_die_offsets(Handle, out _, out ulong uo, out IntPtr error)
+			=> dwarf_die_offsets(Handle, out _, out ulong uo, out IntPtr error)
 				.handle("dwarf_die_offsets", error, uo);
 
 		/// <summary>
@@ -97,7 +98,7 @@ namespace Dwarf
 		/// May be null is this DIE does not have a name attribute.
 		/// </summary>
 		public string Name
-			=> wrapGetter(Wrapper.dwarf_diename, out string name)
+			=> wrapGetter(dwarf_diename, out string name)
 				? name
 				: null;
 
@@ -107,7 +108,7 @@ namespace Dwarf
 		/// for the compilation unit of which this DIE is a part
 		/// </summary>
 		public int AbbreviationCode
-			=> Wrapper.dwarf_die_abbrev_code(Handle);
+			=> dwarf_die_abbrev_code(Handle);
 
 		/// <summary>
 		/// All the attributes of this DIE
@@ -117,7 +118,7 @@ namespace Dwarf
 			get
 			{
 				// DW_DLV_NO_ENTRY falls through since it sets count to 0
-				Wrapper.dwarf_attrlist(
+				dwarf_attrlist(
 					Handle, out IntPtr buf, out long count, out IntPtr error
 				).handleOpt("dwarf_attrlist", error);
 
@@ -137,7 +138,7 @@ namespace Dwarf
 			get
 			{
 				(ushort v, ushort o) x;
-				Wrapper.dwarf_get_version_of_die(Handle, out x.v, out x.o);
+				dwarf_get_version_of_die(Handle, out x.v, out x.o);
 				return x;
 			}
 		}
@@ -149,7 +150,7 @@ namespace Dwarf
 		/// This CU has no macro data attribute, or no .debug_macro section is present
 		/// </exception>
 		public MacroContext MacroContext
-			=> Wrapper.dwarf_get_macro_context(
+			=> dwarf_get_macro_context(
 					Handle,
 					out ulong version, out IntPtr context,
 					out ulong unitOffset,
@@ -177,7 +178,7 @@ namespace Dwarf
 		/// If there is no available .debug_addr section
 		/// </exception>
 		public ulong AddressIndexToAddress(ulong index)
-			=> Wrapper.dwarf_debug_addr_index_to_addr(
+			=> dwarf_debug_addr_index_to_addr(
 				Handle, index, out ulong addr, out IntPtr error
 			).handleOpt("dwarf_debug_addr_index_to_addr", error)
 			? addr
@@ -188,13 +189,13 @@ namespace Dwarf
 		/// this DIE belongs to. 
 		/// </summary>
 		public ulong CUDieOffset
-			=> wrapGetter<ulong>(Wrapper.dwarf_CU_dieoffset_given_die);
+			=> wrapGetter<ulong>(dwarf_CU_dieoffset_given_die);
 
 		/// <summary>
 		/// Determines the global offset and length of the Compilation Unit containing this DIE
 		/// </summary>
 		public (ulong GlobalOffset, ulong Length) CUOffsetRange
-			=> Wrapper.dwarf_die_CU_offset_range(
+			=> dwarf_die_CU_offset_range(
 					Handle, out ulong off, out ulong len, out IntPtr error
 				).handle("dwarf_die_CU_offset_range", error, (off, len));
 
@@ -204,7 +205,7 @@ namespace Dwarf
 		/// Returns null if that attribute isn't present.
 		/// </summary>
 		public ulong? LowProgramCounter
-			=> wrapOptGetter<ulong>(Wrapper.dwarf_lowpc);
+			=> wrapOptGetter<ulong>(dwarf_lowpc);
 
 		/// <summary>
 		/// The high program counter via the <see cref="AttributeNumber.HighPc"/> attribute.
@@ -215,7 +216,7 @@ namespace Dwarf
 		/// (1 higher than the address of the last pc in the address range)
 		/// </summary>
 		public (bool isOffset, ulong highPC)? HighProgramCounter
-			=> Wrapper.dwarf_highpc_b(
+			=> dwarf_highpc_b(
 					Handle,
 					out ulong highpc,
 					out _, out FormClass c,
@@ -229,7 +230,7 @@ namespace Dwarf
 		/// Returns null if that attribute doesn't exist.
 		/// </summary>
 		public ulong? TypeOffset
-			=> wrapOptGetter<ulong>(Wrapper.dwarf_dietype_offset);
+			=> wrapOptGetter<ulong>(dwarf_dietype_offset);
 
 		/// <summary>
 		/// The number of bytes needed to contain an instance of the aggregate
@@ -239,7 +240,7 @@ namespace Dwarf
 		/// <see cref="AttributeNumber.ByteSize"/>
 		/// </summary>
 		public ulong? ByteSize
-			=> wrapOptGetter<ulong>(Wrapper.dwarf_bytesize);
+			=> wrapOptGetter<ulong>(dwarf_bytesize);
 
 		/// <summary>
 		/// The number of bits occupied by the bit field value that is an attribute of this DIE.
@@ -248,7 +249,7 @@ namespace Dwarf
 		/// <see cref="AttributeNumber.BitSize"/>
 		/// </summary>
 		public ulong? BitSize
-			=> wrapOptGetter<ulong>(Wrapper.dwarf_bitsize);
+			=> wrapOptGetter<ulong>(dwarf_bitsize);
 
 		/// <summary>
 		/// The number of bits to the left of the most significant bit of the bit field value.
@@ -261,7 +262,7 @@ namespace Dwarf
 		/// <see cref="AttributeNumber.BitOffset"/>
 		/// </summary>
 		public ulong? BitOffset
-			=> wrapOptGetter<ulong>(Wrapper.dwarf_bitoffset);
+			=> wrapOptGetter<ulong>(dwarf_bitoffset);
 
 		/// <summary>
 		/// The source language of the compilation unit containing this DIE.
@@ -270,7 +271,7 @@ namespace Dwarf
 		/// (i.e. contain the attribtue <see cref="AttributeNumber.Language"/>)
 		/// </summary>
 		public SourceLanguage? SourceLanguage
-			=> wrapGetter<ulong>(Wrapper.dwarf_srclang, out ulong lang)
+			=> wrapGetter<ulong>(dwarf_srclang, out ulong lang)
 				? (SourceLanguage)lang : null;
 
 		/// <summary>
@@ -280,7 +281,7 @@ namespace Dwarf
 		/// <see cref="AttributeNumber.Ordering"/>
 		/// </summary>
 		public ArrayOrdering? ArrayOrder
-			=> wrapGetter<ulong>(Wrapper.dwarf_arrayorder, out ulong order)
+			=> wrapGetter<ulong>(dwarf_arrayorder, out ulong order)
 				? (ArrayOrdering)order : null;
 
 #endregion
@@ -317,14 +318,14 @@ namespace Dwarf
 #endregion
 
 		~Die()
-			=> Wrapper.dwarf_dealloc_die(Handle);
+			=> dwarf_dealloc_die(Handle);
 
 #region Methods
 		/// <summary>
 		/// Wrapper for Debug.dwarf_offdie_b
 		/// </summary>
 		private static IntPtr atOffset(Debug debug, ulong offset, bool isInfo)
-			=> Wrapper.dwarf_offdie_b(
+			=> dwarf_offdie_b(
 					debug.Handle, offset, isInfo ? 1 : 0,
 					out IntPtr die, out IntPtr error
 				).handleOpt("dwarf_offdie_b", error)
@@ -344,7 +345,7 @@ namespace Dwarf
 		/// null if that attribute doesn't exist
 		/// </returns>
 		public string Text(AttributeNumber attr)
-			=> Wrapper.dwarf_die_text(
+			=> dwarf_die_text(
 					Handle, (ushort)attr,
 					out string name, out IntPtr error
 				).handleOpt("dwarf_die_text", error)
@@ -358,7 +359,7 @@ namespace Dwarf
 		/// An attribute number
 		/// </param>
 		public bool HasAttribute(AttributeNumber number)
-			=> Wrapper.dwarf_hasattr(
+			=> dwarf_hasattr(
 					Handle, (ushort)number,
 					out int ret, out IntPtr error
 				).handle("dwarf_hasattr", error, ret != 0);
@@ -373,7 +374,7 @@ namespace Dwarf
 		/// </returns>
 		/// <exception cref="DwarfException"></exception>
 		public Attribute GetAttribute(AttributeNumber number)
-			=> Wrapper.dwarf_attr(
+			=> dwarf_attr(
 					Handle, (ushort)number,
 					out IntPtr retAttr, out IntPtr error
 				).handleOpt("dwarf_attr", error)
@@ -391,7 +392,7 @@ namespace Dwarf
 		/// If no .debug_macro section is present
 		/// </exception>
 		public MacroContext MacroContextAt(ulong offset)
-			=> Wrapper.dwarf_get_macro_context_by_offset(
+			=> dwarf_get_macro_context_by_offset(
 					Handle, offset,
 					out ulong version,
 					out IntPtr context,

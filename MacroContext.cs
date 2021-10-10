@@ -1,4 +1,5 @@
 using System;
+using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
@@ -161,7 +162,7 @@ namespace Dwarf
 		/// An array of form codes
 		/// </summary>
 		public byte[] Operands
-			=> Wrapper.dwarf_macro_operands_table(
+			=> dwarf_macro_operands_table(
 				Context.Handle, Index,
 				out _,
 				out ushort count, out IntPtr operands,
@@ -183,7 +184,7 @@ namespace Dwarf
 			{
 				var d = new MacroDefUndef();
 
-				return Wrapper.dwarf_get_macro_defundef(
+				return dwarf_get_macro_defundef(
 					Context.Handle, Index,
 					out d.LineNumber,
 					out d.Index,
@@ -207,7 +208,7 @@ namespace Dwarf
 			{
 				var d = new MacroStartEndFile();
 
-				return Wrapper.dwarf_get_macro_startend_file(
+				return dwarf_get_macro_startend_file(
 					Context.Handle, Index,
 					out d.LineNumber,
 					out d.NameIndexToLineTab,
@@ -229,7 +230,7 @@ namespace Dwarf
 		/// For <see cref="MacroOpcode.ImportSup"/> the referenced section is in a supplementary object.
 		/// </summary>
 		public ulong? ImportOffset
-			=> Wrapper.dwarf_get_macro_import(
+			=> dwarf_get_macro_import(
 				Context.Handle, Index,
 				out ulong targetOffset,
 				out IntPtr error
@@ -245,7 +246,7 @@ namespace Dwarf
 			if(index >= context.OpcodeCount)
 				throw new IndexOutOfRangeException("Index exceeds Opcode Count");
 
-			Wrapper.dwarf_get_macro_op(
+			dwarf_get_macro_op(
 				Context.Handle, Index,
 				out StartSectionOffset,
 				out ushort macroOperator,
@@ -305,7 +306,7 @@ namespace Dwarf
 		/// including the length of the DWARF5-style header.
 		/// </summary>
 		public ulong TotalLength
-			=> wrapGetter<ulong>(Wrapper.dwarf_macro_context_total_length);
+			=> wrapGetter<ulong>(dwarf_macro_context_total_length);
 
 		/// <summary>
 		/// Retrieves the basic fields of a Macro Unit Header (Macro Information Header)
@@ -316,7 +317,7 @@ namespace Dwarf
 			{
 				MacroContextHeader h = new MacroContextHeader();
 
-				Wrapper.dwarf_macro_context_head(
+				dwarf_macro_context_head(
 					Handle,
 					out h.Version, out h.MacroOffset, out h.MacroLength,
 					out h.MacroHeaderLength, out h.Flags,
@@ -346,7 +347,7 @@ namespace Dwarf
 	
 		// GC order is forced by the Debug field
 		~MacroContext()
-			=> Wrapper.dwarf_dealloc_macro_context(Handle);
+			=> dwarf_dealloc_macro_context(Handle);
 
 		/// <summary>
 		/// Retrieves a macro operand at the given index
@@ -357,9 +358,5 @@ namespace Dwarf
 		/// <returns></returns>
 		public MacroOperation GetOperation(ushort index)
 			=> new MacroOperation(this, index);
-
-
-		public MacroOperation this[ushort index]
-			=> GetOperation(index);
 	}
 }

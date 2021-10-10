@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using static Dwarf.Defines;
+using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
@@ -24,7 +25,7 @@ namespace Dwarf
 		/// The attribute code represented by this attribute
 		/// </summary>
 		public ushort Number
-			=> wrapGetter<ushort>(Wrapper.dwarf_whatattr);
+			=> wrapGetter<ushort>(dwarf_whatattr);
 
 		/// <summary>
 		/// The address this attribute represents.
@@ -32,7 +33,7 @@ namespace Dwarf
 		/// doesn't belong to the <see cref="FormClass.Address"/> class
 		/// </summary>
 		public ulong Address
-			=> wrapGetter<ulong>(Wrapper.dwarf_formaddr);
+			=> wrapGetter<ulong>(dwarf_formaddr);
 
 		/// <summary>
 		/// Determines the CU-relative offset represented by this Attribute
@@ -44,7 +45,7 @@ namespace Dwarf
 		/// Otherwise, a <see cref="DwarfException"/> is thrown.
 		/// </summary>
 		public ulong Reference
-			=> wrapGetter<ulong>(Wrapper.dwarf_formref);
+			=> wrapGetter<ulong>(dwarf_formref);
 
 		/// <summary>
 		/// Determines the section-relative offset represented by this attribute.
@@ -59,7 +60,7 @@ namespace Dwarf
 		/// Otherwise, a <see cref="DwarfException"/> is thrown.
 		/// </summary>
 		public ulong GlobalReference
-			=> wrapGetter<ulong>(Wrapper.dwarf_global_formref);
+			=> wrapGetter<ulong>(dwarf_global_formref);
 
 		/// <summary>
 		/// The index which refers to an entry in the .debug_str_offsets section of this .dwo
@@ -71,7 +72,7 @@ namespace Dwarf
 		/// throws a <see cref="DwarfException">
 		/// </summary>
 		public ulong DebugStringIndex
-			=> wrapGetter<ulong>(Wrapper.dwarf_get_debug_str_index);
+			=> wrapGetter<ulong>(dwarf_get_debug_str_index);
 
 		/// <summary>
 		/// The boolean flag value of this attribute.
@@ -80,7 +81,7 @@ namespace Dwarf
 		/// <see cref="Form.Flag">
 		/// </summary>
 		public bool Flag
-			=> wrapGetter<int>(Wrapper.dwarf_formflag) != 0;
+			=> wrapGetter<int>(dwarf_formflag) != 0;
 
 		/// <summary>
 		/// The unsigned constant represented by this attribute.
@@ -92,14 +93,14 @@ namespace Dwarf
 		/// are possibly class CONSTANT, and for DWARF4 and later they are definitely class CONSTANT.
 		/// </summary>
 		public ulong UData
-			=> wrapGetter<ulong>(Wrapper.dwarf_formudata);
+			=> wrapGetter<ulong>(dwarf_formudata);
 
 		/// <summary>
 		/// Functions like <see cref="Attribute.UData"/>, but returns signed data,
 		/// possibly sign extending values.
 		/// </summary>
 		public long SData
-			=> wrapGetter<long>(Wrapper.dwarf_formsdata);
+			=> wrapGetter<long>(dwarf_formsdata);
 
 		/// <summary>
 		/// The string represented by this attribute.
@@ -108,7 +109,7 @@ namespace Dwarf
 		/// <see cref="FormClass.String"/>
 		/// </summary>
 		public string String
-			=> wrapGetter<string>(Wrapper.dwarf_formstring);
+			=> wrapGetter<string>(dwarf_formstring);
 
 		/// <summary>
 		/// Retrieves the 8-byte signature of this attribute.
@@ -118,7 +119,7 @@ namespace Dwarf
 		/// <see cref="Form.RefSig8"/>
 		/// </summary>
 		public ulong Signature
-			=> wrapGetter<ulong>(Wrapper.dwarf_formsig8);
+			=> wrapGetter<ulong>(dwarf_formsig8);
 
 		/// <summary>
 		/// Returns the length and bytes of a location expression.
@@ -127,7 +128,7 @@ namespace Dwarf
 		/// <see cref="Form.Exprloc"/>
 		/// </summary>
 		public (ulong length, IntPtr block) ExprLoc
-			=> Wrapper.dwarf_formexprloc(
+			=> dwarf_formexprloc(
 					Handle,
 					out ulong len, out IntPtr block, out IntPtr error
 				).handle("dwarf_formexprloc", error, (len, block));
@@ -137,14 +138,14 @@ namespace Dwarf
 		/// <see cref="FormClass.Block"/> class attribute.
 		/// </summary>
 		public (ushort type, ulong low, ulong high)[] UnsignedDiscriminants
-			=> discriminants<ulong>(Wrapper.dwarf_discr_entry_u);
+			=> discriminants<ulong>(dwarf_discr_entry_u);
 
 		/// <summary>
 		/// Reads the signed discriminants of this
 		/// <see cref="FormClass.Block"/> class attribute.
 		/// </summary>
 		public (ushort type, long low, long high)[] SignedDiscriminants
-			=> discriminants<long>(Wrapper.dwarf_discr_entry_s);
+			=> discriminants<long>(dwarf_discr_entry_s);
 
 		/// <summary>
 		/// The form code of this attribute
@@ -155,14 +156,14 @@ namespace Dwarf
 		/// This is what most applications will want
 		/// </summary>
 		public Form Form
-			=> (Form)wrapGetter<ushort>(Wrapper.dwarf_whatform);
+			=> (Form)wrapGetter<ushort>(dwarf_whatform);
 
 		/// <summary>
 		/// Like <see cref="Attribute.Form"/>, but returns <see cref="Form.Indirect"/>
 		/// instead of determining the 'final' form
 		/// </summary>
 		public ushort DirectForm
-			=> wrapGetter<ushort>(Wrapper.dwarf_whatform_direct);
+			=> wrapGetter<ushort>(dwarf_whatform_direct);
 
 		/// <summary>
 		/// Determines the form class of this attribute
@@ -172,7 +173,7 @@ namespace Dwarf
 			get
 			{
 				var v = Die.Version;
-				return Wrapper.dwarf_get_form_class(
+				return dwarf_get_form_class(
 					v.Version, Number, v.OffsetSize, (ushort)Form);
 			}
 		}
@@ -183,15 +184,15 @@ namespace Dwarf
 			=> Die = die;
 
 		~Attribute()
-			=> Wrapper.dwarf_dealloc_attribute(Handle);
+			=> dwarf_dealloc_attribute(Handle);
 
 		private (ushort, T, T)[] discriminants<T>(discr_entry<T> e)
 		{
-			var bp = wrapGetter<IntPtr>(Wrapper.dwarf_formblock);
-			var b = Marshal.PtrToStructure<Wrapper.Block>(bp);
+			var bp = wrapGetter<IntPtr>(dwarf_formblock);
+			var b = Marshal.PtrToStructure<Block>(bp);
 			IntPtr error;
 
-			if(! Wrapper.dwarf_discr_list(
+			if(! dwarf_discr_list(
 					Die.debug.Handle, b.bl_data, b.bl_len,
 					out IntPtr head, out ulong len, out error)
 				.handleOpt("dwarf_discr_list", error))
@@ -214,5 +215,8 @@ namespace Dwarf
 			return r;
 		}
 
+		public bool HasForm(Form form)
+			=> dwarf_hasform(Handle, (ushort)form, out int has, out IntPtr error)
+				.handle("dwarf_hasform", error, has != 0);
 	}
 }

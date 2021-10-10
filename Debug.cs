@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using static Dwarf.Defines;
+using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
@@ -219,7 +220,7 @@ namespace Dwarf
 		/// If the .debug_pubnames section does not exist
 		/// </exception>
 		public Global[] Globals
-			=> Wrapper.dwarf_get_globals(
+			=> dwarf_get_globals(
 					Handle,
 					out IntPtr array, out long count, out IntPtr error
 				).handleOpt("dwarf_get_globals", error)
@@ -245,12 +246,12 @@ namespace Dwarf
 		{
 			get
 			{
-				var ptr = wrapGetter<IntPtr>(Wrapper.dwarf_get_tied_dbg);
+				var ptr = wrapGetter<IntPtr>(dwarf_get_tied_dbg);
 				return ptr == IntPtr.Zero ? new Debug(ptr) : null;
 			}
 
 			set
-				=> Wrapper.dwarf_set_tied_dbg(Handle, value?.Handle ?? IntPtr.Zero, out IntPtr error)
+				=> dwarf_set_tied_dbg(Handle, value?.Handle ?? IntPtr.Zero, out IntPtr error)
 					.handle("dwarf_set_tied_dbg", error);
 		}
 
@@ -261,7 +262,7 @@ namespace Dwarf
 		{
 			IntPtr error;
 
-			Wrapper.dwarf_sec_group_sizes(handle,
+			dwarf_sec_group_sizes(handle,
 				out SectionCount, out GroupCount, out SelectedGroup, out ulong mapEntryCount,
 				out error)
 				.handle("dwarf_sec_group_sizes", error);
@@ -270,7 +271,7 @@ namespace Dwarf
 			var sectionNumbers = new ulong[mapEntryCount];
 			var sectionNamePtr = new IntPtr[mapEntryCount];
 
-			Wrapper.dwarf_sec_group_map(Handle,
+			dwarf_sec_group_map(Handle,
 				mapEntryCount, groupNumbers, sectionNumbers, sectionNamePtr,
 				out error)
 				.handle("dwarf_sec_group_map", error);
@@ -319,7 +320,7 @@ namespace Dwarf
 #endregion
 
 		~Debug()
-			=> Wrapper.dwarf_finish(Handle, out IntPtr error)
+			=> dwarf_finish(Handle, out IntPtr error)
 				.handle("dwarf_finish", error);
 
 
@@ -332,7 +333,7 @@ namespace Dwarf
 		/// </summary>
 		private IEnumerable<Die> getDies(bool isInfo)
 		{
-			int code = Wrapper.dwarf_siblingof_b(
+			int code = dwarf_siblingof_b(
 				Handle, IntPtr.Zero, isInfo ? 1 : 0,
 				out IntPtr die, out IntPtr error);
 
@@ -388,7 +389,7 @@ namespace Dwarf
 		/// <param name="ptr"></param>
 		/// <param name="dla"></param>
 		internal void Dealloc(IntPtr ptr, int dla)
-			=> Wrapper.dwarf_dealloc(Handle, ptr, dla);
+			=> dwarf_dealloc(Handle, ptr, dla);
 
 		/// <summary>
 		/// Moves the state of this Debug to the next Compilation Unit
@@ -397,7 +398,7 @@ namespace Dwarf
 		/// <returns>THe CU header of the new compilation unit, or null if the last compilation unit was reached</returns>
 		public CompilationUnitHeader? NextUnit(bool isInfo)
 		{
-			if(Wrapper.dwarf_next_cu_header_d(
+			if(dwarf_next_cu_header_d(
 				Handle, isInfo ? 1 : 0,
 				out ulong headerLength,
 				out ushort versionStamp,
@@ -444,7 +445,7 @@ namespace Dwarf
 		/// Whether to look in .debug_info (if true) or .debug_types (if false)
 		/// </param>
 		public ulong[] OffsetList(ulong offset, bool isInfo)
-			=> Wrapper.dwarf_offset_list(
+			=> dwarf_offset_list(
 					Handle, offset, isInfo ? 1 : 0,
 					out IntPtr buf, out ulong count,
 					out IntPtr error
@@ -455,7 +456,7 @@ namespace Dwarf
 
 #region Static Helper Methods
 		/// <summary>
-		/// Wrapper for <see cref="Wrapper.dwarf_init_path">
+		/// Wrapper for <see cref="dwarf_init_path">
 		/// </summary>
 		/// <returns>A dwarf_Debug reference</returns>
 		private static IntPtr initPath(string path, uint group)
@@ -463,7 +464,7 @@ namespace Dwarf
 			if(path is null)
 				throw new ArgumentNullException(nameof(path));
 
-			return Wrapper.dwarf_init_path(
+			return dwarf_init_path(
 					path,
 					IntPtr.Zero, 0, 0, group,
 					null, IntPtr.Zero, out IntPtr handle,
@@ -475,11 +476,11 @@ namespace Dwarf
 		}
 
 		/// <summary>
-		/// Wrapper for <see cref="Wrapper.dwarf_init_b"/>
+		/// Wrapper for <see cref="dwarf_init_b"/>
 		/// </summary>
 		/// <returns>A dwarf_Debug reference</returns>
 		private static IntPtr initB(int fd, uint group)
-			=> Wrapper.dwarf_init_b(
+			=> dwarf_init_b(
 					fd, 0, group, null, IntPtr.Zero,
 					out IntPtr handle, out IntPtr error
 				).handleOpt("dwarf_init_b", error)
