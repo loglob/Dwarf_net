@@ -228,6 +228,32 @@ namespace Dwarf
 					"The .debug_pubnames section does not exist"
 				);
 
+		/// <summary>
+		/// A debug instance tied to this instance.
+		/// Settings it enables cross-object access of DWARF data.
+		/// The tieing operation can be undone by setting it to null.
+		/// <br/>
+		/// If a DWARF5 Package object has <see cref="Form.Addrx"/> or <see cref="Form.GnuAddrIndex"/>
+		/// or one of the other indexed forms in DWARF5 in an address attribute one needs both
+		/// the Package file and the executable to extract the actual address with
+		/// <see cref="Attribute.Address"/>.
+		/// <br/>
+		/// The utility <see cref="Util.IsIndexed(Form)"/> is a
+		/// handy way to know if an address form is indexed.
+		/// </summary>
+		public Debug TiedDebug
+		{
+			get
+			{
+				var ptr = wrapGetter<IntPtr>(Wrapper.dwarf_get_tied_dbg);
+				return ptr == IntPtr.Zero ? new Debug(ptr) : null;
+			}
+
+			set
+				=> Wrapper.dwarf_set_tied_dbg(Handle, value?.Handle ?? IntPtr.Zero, out IntPtr error)
+					.handle("dwarf_set_tied_dbg", error);
+		}
+
 #endregion
 
 #region Constructors
@@ -407,6 +433,23 @@ namespace Dwarf
 				);
 			}
 		}
+
+		/// <summary>
+		/// Determines the offsets of the direct children of the die at <paramref name="offset"/>
+		/// </summary>
+		/// <param name="offset">
+		/// The offset of a DIE
+		/// </param>
+		/// <param name="isInfo">
+		/// Whether to look in .debug_info (if true) or .debug_types (if false)
+		/// </param>
+		public ulong[] OffsetList(ulong offset, bool isInfo)
+			=> Wrapper.dwarf_offset_list(
+					Handle, offset, isInfo ? 1 : 0,
+					out IntPtr buf, out ulong count,
+					out IntPtr error
+				).handle("dwarf_offset_list", error, buf.PtrToArray<ulong>((long)count));
+		
 
 #endregion
 
