@@ -12,12 +12,10 @@ namespace Dwarf
 	/// </summary>
 	public class Die : HandleWrapper
 	{
-#region Fields
 		/// <summary>
 		/// The coresponding Debug object.
 		/// </summary>
-		internal Debug debug;
-#endregion
+		public readonly Debug Debug;
 
 #region Properties
 
@@ -41,10 +39,10 @@ namespace Dwarf
 				for (IntPtr cur = Handle; ;)
 				{
 					if(dwarf_siblingof_b(
-							debug.Handle, cur, isInfo,
+							Debug.Handle, cur, isInfo,
 							out cur, out IntPtr error
 					).handleOpt("dwarf_siblingof_b", error))
-						yield return new Die(debug, cur);
+						yield return new Die(Debug, cur);
 					else
 						yield break;
 				}
@@ -60,7 +58,7 @@ namespace Dwarf
 			{
 				if(wrapGetter(dwarf_child, out IntPtr kid))
 				{
-					var child = new Die(debug, kid);
+					var child = new Die(Debug, kid);
 					return child.Siblings.Prepend(child);
 				}
 				else
@@ -124,7 +122,7 @@ namespace Dwarf
 
 				var r = buf.PtrToArray(count, x => new Attribute(this, x));
 
-				debug.Dealloc(buf, DW_DLA_LIST);
+				Debug.Dealloc(buf, DW_DLA_LIST);
 
 				return r;
 			}
@@ -158,7 +156,7 @@ namespace Dwarf
 					out ulong opsDataLength,
 					out IntPtr error)
 				.handleOpt("dwarf_get_macro_context", error)
-				? new MacroContext(debug, context, version, unitOffset, opsCount, opsDataLength)
+				? new MacroContext(Debug, context, version, unitOffset, opsCount, opsDataLength)
 				: throw new InvalidOperationException(
 					"This Compilation Unit has no macro data attribute " +
 					"or there is no .debug_macro section present.");
@@ -288,7 +286,7 @@ namespace Dwarf
 
 #region Constructors
 		internal Die(Debug debug, IntPtr handle) : base(handle)
-			=> this.debug = debug;
+			=> this.Debug = debug;
 
 		/// <summary>
 		/// Retrieves the DIE at byte offset <paramref name="offset"/>
@@ -400,7 +398,7 @@ namespace Dwarf
 					out ulong opsTotalByteLen,
 					out IntPtr error)
 				.handleOpt("dwarf_get_macro_context_by_offset", error)
-				? new MacroContext(debug, context, version, offset, opsCount, opsTotalByteLen)
+				? new MacroContext(Debug, context, version, offset, opsCount, opsTotalByteLen)
 				: throw new InvalidOperationException(
 					"There is no .debug_macro section present");
 

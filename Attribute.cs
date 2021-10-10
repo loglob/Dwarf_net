@@ -13,12 +13,10 @@ namespace Dwarf
 		private delegate int discr_entry<T>(IntPtr head, ulong index,
 			out ushort type, out T low, out T high, out IntPtr error);
 
-#region Fields
 		/// <summary>
 		/// The Die this attribute is from.
 		/// </summary>
 		public readonly Die Die;
-#endregion
 
 #region Properties
 		/// <summary>
@@ -201,11 +199,11 @@ namespace Dwarf
 			IntPtr error;
 
 			if(! dwarf_discr_list(
-					Die.debug.Handle, b.bl_data, b.bl_len,
+					Die.Debug.Handle, b.bl_data, b.bl_len,
 					out IntPtr head, out ulong len, out error)
 				.handleOpt("dwarf_discr_list", error))
 			{
-				Die.debug.Dealloc(bp, DW_DLA_BLOCK);
+				Die.Debug.Dealloc(bp, DW_DLA_BLOCK);
 				return new (ushort, T, T)[0];
 			}
 
@@ -217,8 +215,8 @@ namespace Dwarf
 					.handle(e.Method.Name, error);
 			}
 
-			Die.debug.Dealloc(bp, DW_DLA_BLOCK);
-			Die.debug.Dealloc(head, DW_DLA_DSC_HEAD);
+			Die.Debug.Dealloc(bp, DW_DLA_BLOCK);
+			Die.Debug.Dealloc(head, DW_DLA_DSC_HEAD);
 
 			return r;
 		}
