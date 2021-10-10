@@ -178,6 +178,14 @@ namespace Dwarf
 			}
 		}
 
+		/// <summary>
+		/// The index of this attribute into the .debug_addr section.
+		/// Only valid on attributes with form <see cref="Form.GnuAddrIndex"/>
+		/// or <see cref="Form.Addrx"/>
+		/// </summary>
+		public ulong Index
+			=> wrapGetter<ulong>(dwarf_get_debug_addr_index);
+
 #endregion
 
 		internal Attribute(Die die, IntPtr handle) : base(handle)
@@ -218,5 +226,20 @@ namespace Dwarf
 		public bool HasForm(Form form)
 			=> dwarf_hasform(Handle, (ushort)form, out int has, out IntPtr error)
 				.handle("dwarf_hasform", error, has != 0);
+
+		/// <summary>
+		/// Converts a CU-relative offset to a section-relative offset
+		/// <br/>
+		/// This attribute must be a CU-local reference (DWARF class <see cref="FormClass.Reference"/>)
+		/// or form <see cref="Form.RefAddr"/> and be directly relevant to the calculated global offset
+		/// to mean anything.
+		/// </summary>
+		/// <param name="offset">A CU-relative offset</param>
+		/// <returns>An equivalent section-relative offset</returns>
+		public ulong ToGlobalOffset(ulong offset)
+			=> dwarf_convert_to_global_offset(Handle, offset, out ulong go, out IntPtr error)
+				.handle("dwarf_convert_to_global_offset", error, go);
+
+	
 	}
 }

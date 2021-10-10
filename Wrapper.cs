@@ -1639,6 +1639,20 @@ namespace Dwarf
 			out IntPtr error
 		);
 
+		/// <param name="attr">
+		/// An attribute with form <see cref="Form.GnuAddrIndex"/>
+		/// or <see cref="Form.Addrx"/>
+		/// </param>
+		/// <param name="return_index">The attribute's index into the .debug_addr section</param>
+		/// <param name="error"></param>
+		/// <returns></returns>
+		[DllImport(lib)]
+		public static extern int dwarf_get_debug_addr_index(
+			IntPtr attr,
+			out ulong return_index,
+			out IntPtr error	
+		);
+
 		/// <summary>
 		/// For an a ttribute with form <see cref="DW_FORM_strx"/> or
 		/// <see cref="DW_FORM_GNU_str_index"/> retrieves the index
