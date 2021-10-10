@@ -204,7 +204,7 @@ namespace Dwarf
 		/// Returns null if that attribute isn't present.
 		/// </summary>
 		public ulong? LowProgramCounter
-			=> wrapGetter<ulong>(Wrapper.dwarf_lowpc, out ulong lowpc) ? lowpc : null;
+			=> wrapOptGetter<ulong>(Wrapper.dwarf_lowpc);
 
 		/// <summary>
 		/// The high program counter via the <see cref="AttributeNumber.HighPc"/> attribute.
@@ -229,9 +229,59 @@ namespace Dwarf
 		/// Returns null if that attribute doesn't exist.
 		/// </summary>
 		public ulong? TypeOffset
-			=> wrapGetter<ulong>(Wrapper.dwarf_dietype_offset, out ulong off)
-				? off
-				: null;
+			=> wrapOptGetter<ulong>(Wrapper.dwarf_dietype_offset);
+
+		/// <summary>
+		/// The number of bytes needed to contain an instance of the aggregate
+		/// debugging information entry represented by this DIE.
+		/// <br/>
+		/// null if this DIE doesn't contain the byte size attribute
+		/// <see cref="AttributeNumber.ByteSize"/>
+		/// </summary>
+		public ulong? ByteSize
+			=> wrapOptGetter<ulong>(Wrapper.dwarf_bytesize);
+
+		/// <summary>
+		/// The number of bits occupied by the bit field value that is an attribute of this DIE.
+		/// <br/>
+		/// null if this DIE doesn't contain the bit size attribute
+		/// <see cref="AttributeNumber.BitSize"/>
+		/// </summary>
+		public ulong? BitSize
+			=> wrapOptGetter<ulong>(Wrapper.dwarf_bitsize);
+
+		/// <summary>
+		/// The number of bits to the left of the most significant bit of the bit field value.
+		/// This bit offset is not necessarily the net bit offset within the structure or class,
+		/// since <see cref="AttributeNumber.DataMemberLocation"/> may give a byte offset to
+		/// this DIE and the bit offset returned through the pointer does not include the bits
+		/// in the byte offset.
+		/// <br/>
+		/// null if this DIE doesn't contain the bit size attribute
+		/// <see cref="AttributeNumber.BitOffset"/>
+		/// </summary>
+		public ulong? BitOffset
+			=> wrapOptGetter<ulong>(Wrapper.dwarf_bitoffset);
+
+		/// <summary>
+		/// The source language of the compilation unit containing this DIE.
+		/// <br/>
+		/// null if this DIE doesn't represent a source file DIE
+		/// (i.e. contain the attribtue <see cref="AttributeNumber.Language"/>)
+		/// </summary>
+		public SourceLanguage? SourceLanguage
+			=> wrapGetter<ulong>(Wrapper.dwarf_srclang, out ulong lang)
+				? (SourceLanguage)lang : null;
+
+		/// <summary>
+		/// The ordering of the array represented by this DIE
+		/// <br/>
+		/// null if this DIE doesn't contain the bit size attribute
+		/// <see cref="AttributeNumber.Ordering"/>
+		/// </summary>
+		public ArrayOrdering? ArrayOrder
+			=> wrapGetter<ulong>(Wrapper.dwarf_arrayorder, out ulong order)
+				? (ArrayOrdering)order : null;
 
 #endregion
 

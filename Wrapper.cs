@@ -12,21 +12,6 @@ namespace Dwarf
 	{
 #region Types
 		/// <summary>
-		/// Record some application command line options in libdwarf.
-		/// This is not arc/argv processing, just precooked setting
-		/// of a flag in libdwarf based on something the application wants.
-		/// </summary>
-		public struct Cmdline_Options
-		{
-			/// <summary>
-			/// if non-zero, tells libdwarf to print some detailed messages to stdout
-			/// in case certain errors are detected.
-			/// The default for this value is FALSE (0) so the extra messages are off by default.
-			/// </summary>
-			int check_verbose_mode;
-		};
-
-		/// <summary>
 		/// The Dwarf_Block type is used to contain the value of an attribute whose form is either
 		/// <see cref="DW_FORM_block1"/>, <see cref="DW_FORM_block2"/>, <see cref="DW_FORM_block4"/>,
 		/// <see cref="DW_FORM_block8"/>, or <see cref="DW_FORM_block"/>.
@@ -88,6 +73,8 @@ namespace Dwarf
 		* dwarf_elf_init(), dwarf_elf_init_b(): deprecated
 		* dwarf_get_elf(): only useful in deprecated context
 		* dwarf_object_init(), dwarf_object_init_b(): out-of-scope
+		* dwarf_set_stringcheck(): we never don't want string checks
+		* dwarf_record_cmdline_options(): We never want stderr printing
 	*/
 
 		/// <summary>
@@ -266,20 +253,6 @@ namespace Dwarf
 		/// <summary>
 		/// The function sets a global flag and returns the previous value of the global flag.
 		/// <br/>
-		/// If the stringcheck global flag is zero (the default)
-		/// libdwarf does string length validity checks (the checks do slow libdwarf down very slightly).
-		/// If the stringcheck global flag is non-zero libdwarf does not do string length validity checks.
-		/// <br/>
-		/// The global flag is really just 8 bits long, upperbits are not noticed or recorded.
-		/// </summary>
-		/// <param name="stringcheck">The new stringcheck value</param>
-		/// <returns>The previous stringcheck value</returns>
-		[DllImport(lib)]
-		public static extern int dwarf_set_stringcheck(int stringcheck);
-
-		/// <summary>
-		/// The function sets a global flag and returns the previous value of the global flag.
-		/// <br/>
 		/// If the flag is non-zero (the default) then the applicable
 		/// <c>.rela</c> section (if one exists) will be processed and applied to any DWARF section
 		/// when it is read in.
@@ -297,14 +270,6 @@ namespace Dwarf
 		/// <returns>The previous value</returns>
 		[DllImport(lib)]
 		public static extern int dwarf_set_reloc_application(int apply);
-
-		/// <summary>
-		/// The function copies a Cmdline_Options structure from consumer code to libdwarf.
-		/// </summary>
-		/// <param name="options"></param>
-		/// <returns></returns>
-		[DllImport(lib)]
-		public static extern int dwarf_record_cmdline_options(Cmdline_Options options);
 
 		/// <summary>
 		/// Enables cross-object access of DWARF data.
@@ -955,13 +920,13 @@ namespace Dwarf
 		/// <param name="form"></param>
 		/// <returns>
 		/// Returns TRUE if the form is one of the indexed address forms (such as
-		/// <see cref="DW_FORM_addrx1"/>) and FALSE otherwise
+		/// <see cref="Form.Addrx1"/>) and FALSE otherwise
 		/// </returns>
 		[DllImport(lib)]
 		public static extern int dwarf_addr_form_is_indexed(ushort form);
 
 		/// <summary>
-		/// Attributes with form <see cref="DW_FORM_addrx"/>, the operation <see cref="DW_OP_addrx"/>,
+		/// Attributes with form <see cref="Form.Addrx"/>, the operation <see cref="Operation.Addrx"/>,
 		/// or certain of the split-dwarf location list entries give an index value to a machine
 		/// address in the .debug_addr section (which is always in .debug_addr even when the
 		/// form/operation are in a split dwarf .dwo section).
@@ -1357,7 +1322,7 @@ namespace Dwarf
 		/// <see cref="DW_DLV_ERROR"/> if an error is detected.
 		/// </returns>
 		[DllImport(lib)]
-		public static extern long dwarf_bytesize(
+		public static extern int dwarf_bytesize(
 			IntPtr die,
 			out ulong return_size,
 			out IntPtr error
