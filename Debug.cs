@@ -255,6 +255,25 @@ namespace Dwarf
 					.handle("dwarf_set_tied_dbg", error);
 		}
 
+		/// <summary>
+		/// The number of distinct section contents that exist.
+		/// This initializes location lists as a side effect
+		/// and may have to be called before other location list operations.
+		/// <br/>
+		/// null if there is no .debug_loclists section.
+		/// </summary>
+		public ulong? LocationListCount
+			=> wrapOptGetter<ulong>(dwarf_load_loclists);
+
+		/// <summary>
+		/// All location lists
+		/// </summary>
+		public LocationList[] LocationLists
+			=> Enumerable
+				.Range(0, (int)LocationListCount)
+				.Select(i => GetLocationList((ulong)i))
+				.ToArray();
+
 #endregion
 
 #region Constructors
@@ -451,6 +470,17 @@ namespace Dwarf
 					out IntPtr error
 				).handle("dwarf_offset_list", error, buf.PtrToArray<ulong>((long)count));
 		
+		/// <summary>
+		/// Retrives a location list with the given index.
+		/// </summary>
+		/// <param name="index">
+		/// An index less than <paramref name="LocationListCount"/>
+		/// </param>
+		/// <returns>
+		/// The location list at that index
+		/// </returns>
+		public LocationList GetLocationList(ulong index)
+			=> new LocationList(this, index);
 
 #endregion
 
