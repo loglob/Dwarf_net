@@ -6,61 +6,41 @@ using static Dwarf.Wrapper;
 
 namespace Dwarf
 {
-	public struct GlobalHeader
-	{
-		// TODO: dig through DWARF standard to find out what these fields mean
-		public ulong OffsetPubHeader;
-		public ulong OffsetSize;
-		public ulong LengthPub;
-		public ulong Version;
-		public ulong HeaderInfoOffset;
-		public ulong InfoLength;
-	}
-
 	/// <summary>
 	/// A descriptors for queries about global names (pubnames).
 	/// </summary>
 	public class Global : HandleWrapper
 	{
+#region Fields
 		/// <summary>
 		/// The debug this Global came from.
-		/// Prevents premature garbage collection.
 		/// </summary>
-		private Debug debug;
+		public readonly Debug Debug;
+
+		// TODO: dig through DWARF standard to find out what these fields mean
+		public readonly ulong OffsetPubHeader;
+		public readonly  ulong OffsetSize;
+		public readonly ulong LengthPub;
+		public readonly ulong Version;
+		public readonly ulong HeaderInfoOffset;
+		public readonly ulong InfoLength;
+
+#endregion // Fields
 
 		internal Global(Debug debug, IntPtr handle) : base(handle)
-			=> this.debug = debug;
-
-		/// <summary>
-		/// For each CU represented in .debug_pubnames, etc, there is a .debug_pubnames header.
-		/// This is the content of the applicable header for this global.
-		/// </summary>
-		public GlobalHeader Header
 		{
-			get
-			{
-				var h = new GlobalHeader();
-				int code;
+			this.Debug = debug;
 
-				switch(code = dwarf_get_globals_header(
-					Handle,
-					out h.OffsetPubHeader, out h.OffsetSize,
-					out h.LengthPub, out h.Version,
-					out h.HeaderInfoOffset, out h.InfoLength,
-					out IntPtr error))
-				{
-					case DW_DLV_OK:
-						return h;
-
-					case DW_DLV_ERROR:
-						throw DwarfException.Wrap(error);
-
-					default:
-						throw DwarfException.BadReturn("dwarf_get_globals_header", code);
-				}
-			}
+			dwarf_get_globals_header(
+				Handle,
+				out OffsetPubHeader, out OffsetSize,
+				out LengthPub, out Version,
+				out HeaderInfoOffset, out InfoLength,
+				out IntPtr error
+			).handle("dwarf_get_globals_header", error);
 		}
 
+#region Properties
 		/// <summary>
 		/// The pubname represented by this Global
 		/// </summary>
@@ -70,8 +50,8 @@ namespace Dwarf
 			{
 				var namePtr = wrapGetter<IntPtr>(dwarf_globname);
 				var name = Marshal.PtrToStringUTF8(namePtr);
-				
-				debug.Dealloc(namePtr, DW_DLA_STRING);
+
+				Debug.Dealloc(namePtr, DW_DLA_STRING);
 
 				return name;
 			}
@@ -89,5 +69,7 @@ namespace Dwarf
 		/// </summary>
 		public ulong CUOffset
 			=> wrapGetter<ulong>(dwarf_global_cu_offset);
+
+#endregion // Properties
 	}
 }
