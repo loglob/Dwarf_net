@@ -102,7 +102,7 @@ static readonly (string prefix, string enumName)[] enumPrefixes = {
 	("DW_LNCT_", "LineNumberHeaderEntryFormat"),
 	("DW_MACRO_", "MacroOpcode"),
 	("DW_CFA_", "CallFrameInstruction"),
-	("DW_RLE_", "RangeListEntry")
+	("DW_RLE_", "RangeListEntryKind")
 };
 
 static readonly HashSet<string> omitList = new HashSet<string>
