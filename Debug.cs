@@ -379,20 +379,17 @@ namespace Dwarf
 		{
 			var co = NextUnitOffset;
 			var dies = new List<Die>();
-
-			if (co == 0)
-			{
-				if(NextUnit(isInfo) == null)
-					return dies;
-			}
-
+			
 			do
 			{
-				foreach(var die in getDies(isInfo))
-					dies.Add(die);
+				var cu = NextUnit(isInfo);
 
-				NextUnit(isInfo);
-			} while (NextUnitOffset != co);
+				if(cu != null)
+				{
+					foreach(var die in getDies(isInfo))
+						dies.Add(die);
+				}
+			} while(NextUnitOffset != co);
 
 			return dies;
 		}
@@ -427,11 +424,6 @@ namespace Dwarf
 				out IntPtr error
 			).handleOpt("dwarf_next_cu_header_d", error))
 			{
-				NextUnitOffset = 0;
-				return null;
-			}
-			else
-			{
 				ulong o = NextUnitOffset;
 				NextUnitOffset = nextOffset;
 
@@ -446,6 +438,11 @@ namespace Dwarf
 					headerType,
 					o
 				);
+			}
+			else
+			{
+				NextUnitOffset = 0;
+				return null;
 			}
 		}
 
