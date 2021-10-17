@@ -231,6 +231,18 @@ namespace Dwarf
 			=> wrapOptGetter<ulong>(dwarf_dietype_offset);
 
 		/// <summary>
+		/// The DIE referenced to by the <see cref="AttributeNumber.Type"/> attribute.
+		/// Returns null if that attribute doesn't exist.
+		/// </summary>
+		public Die Type
+			=> TypeOffset switch
+			{
+				null	=> null,
+				// TODO: check this works right with cross-section references
+				ulong t	=> new Die(Debug, t, IsInfo)
+			};
+
+		/// <summary>
 		/// The number of bytes needed to contain an instance of the aggregate
 		/// debugging information entry represented by this DIE.
 		/// <br/>
