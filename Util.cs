@@ -9,6 +9,12 @@ namespace Dwarf
 #region Public Utils
 
 		/// <summary>
+		/// The date at which libdwarf was built.
+		/// </summary>
+		public static DateTime LibdwarfBuildDate
+			=> DateTime.ParseExact(Wrapper.dwarf_package_version(), "yyyyMMdd", null);
+
+		/// <summary>
 		/// Determines if a form is one of the indexed forms
 		/// (such as <see cref="Form.Addrx1"/>; there are several such in DWARF5).
 		/// <br/>
