@@ -273,8 +273,8 @@ namespace Dwarf
 
 		/// <summary>
 		/// Enables cross-object access of DWARF data.
-		/// If a DWARF5 Package object has <see cref="DW_FORM_addrx"/> or
-		/// <see cref="DW_FORM_GNU_addr_index"/> or one of the other
+		/// If a DWARF5 Package object has <see cref="Form.Addrx"/> or
+		/// <see cref="Form.GnuAddrIndex"/> or one of the other
 		/// indexed forms in DWARF5 in an address attribute one needs both the Package file and the
 		/// executable to extract the actual address with <see cref="dwarf_formaddr"/>.
 		/// The utility function <see cref="dwarf_addr_form_is_indexed"/> is a handy way
@@ -528,7 +528,7 @@ namespace Dwarf
 		);
 	#endregion //Size Operations (6.4)
 
-	// Omitted section Printf Callbacks (6.5): not needed
+	// Omitted section printf Callbacks (6.5): not needed
 
 	#region Debugging Information Entry Delivery Operations (6.6)
 	/* Omitted functions:
@@ -1654,8 +1654,8 @@ namespace Dwarf
 		);
 
 		/// <summary>
-		/// For an a ttribute with form <see cref="DW_FORM_strx"/> or
-		/// <see cref="DW_FORM_GNU_str_index"/> retrieves the index
+		/// For an attribute with form <see cref="Form.Strx"/> or
+		/// <see cref="Form.GnuStrIndex"/> retrieves the index
 		/// (which refers to a .debug_str_offsets section in this .dwo).
 		/// <br/>
 		/// It is an error if the attribute does not have this form
@@ -1837,7 +1837,7 @@ namespace Dwarf
 		/// <summary>
 		/// </summary>
 		/// <param name="attr">
-		/// An attribute of form <see cref="DW_FORM_experloc"/>
+		/// An attribute of form <see cref="Form.Exprloc"/>
 		/// </param>
 		/// <param name="return_exprlen">
 		/// The length of the location expression
@@ -1898,7 +1898,7 @@ namespace Dwarf
 
 		/// <summary>
 		/// The only current applicability is the block value of a
-		/// <see cref="DW_AT_discr_list"/> attribute.
+		/// <see cref="AttributeNumber.DiscrList"/> attribute.
 		/// <br/>
 		/// Those values are useful for calls to <see cref="dwarf_discr_entry_u"/> or
 		/// <see cref="dwarf_discr_entry_s"/> to get the actual discriminant values.
@@ -2504,7 +2504,7 @@ namespace Dwarf
 		/// An array of Dwarf_Line pointers.
 		/// <br/>
 		/// If a line table is actually a two-level table <paramref name="linebuf"/>
-		/// is set to point to an array of Logicals lines.
+		/// is set to point to an array of logical lines.
 		/// <br/>
 		/// Actual type: out Dwarf_Line[] / Dwarf_Line**
 		/// </param>
@@ -2513,7 +2513,7 @@ namespace Dwarf
 		/// </param>
 		/// <param name="linebuf_actuals">
 		/// If a line table is actually a two-level table <paramref name="linebuf_actuals"/>
-		/// is set to point to an array of Actuals lines.
+		/// is set to point to an array of actual lines.
 		/// <br/>
 		/// Actual type: out Dwarf_Line[] / Dwarf_Line**
 		/// </param>
@@ -2611,10 +2611,10 @@ namespace Dwarf
 
 		/// <summary>
 		/// With DWARF5 the base file number index in the line table changed from zero
-		/// (DWARF2,3,4) to one (DWA RF5). Which meant iterating through the valid source file
+		/// (DWARF2,3,4) to one (DWARF5). Which meant iterating through the valid source file
 		/// indexes became messy if one used the older dwarf_srclines_files_count()
 		/// function (zero-based and one-based indexing being incompatible).
-		/// See Figure "Examplec dwarf_srclines_b()" above for use of this
+		/// See Figure "Example C dwarf_srclines_b()" above for use of this
 		/// function in accessing file names.
 		/// </summary>
 		/// <param name="line_context"></param>
@@ -3774,7 +3774,7 @@ namespace Dwarf
 		/// are 32 bits
 		/// </param>
 		/// <param name="has_operands_table">
-		/// set to non-zero if the opcod_operands_table_flag bit is set in the
+		/// set to non-zero if the opcode_operands_table_flag bit is set in the
 		/// flags field of the macro unit header
 		/// </param>
 		/// <param name="opcode_count">
@@ -3979,7 +3979,7 @@ namespace Dwarf
 		/// <param name="src_file_name">
 		/// The source file name.
 		/// If the index seems wrong or the line table is unavailable
-		/// the name returned is "<no-source-file-name-available>"
+		/// the name returned is "&lt;no-source-file-name-available&gt;"
 		/// </param>
 		/// <param name="error"></param>
 		/// <returns>
