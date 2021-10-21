@@ -10,6 +10,9 @@ namespace Dwarf
 	/// </summary>
 	public class Attribute : HandleWrapper
 	{
+		/// <summary>
+		/// Getter for signed or unsigned discriminant entires
+		/// </summary>
 		private delegate int discr_entry<T>(IntPtr head, ulong index,
 			out ushort type, out T low, out T high, out IntPtr error);
 
@@ -189,9 +192,25 @@ namespace Dwarf
 		internal Attribute(Die die, IntPtr handle) : base(handle)
 			=> Die = die;
 
+		/// <summary>
+        /// Calls the libdwarf attribute deallocator.
+        /// Finalizer order is forced by the <paramref name="Die"/> field.
+        /// </summary>
 		~Attribute()
 			=> dwarf_dealloc_attribute(Handle);
 
+		/// <summary>
+		/// Generic getter for all signed or unsigned discrimintants
+		/// </summary>
+		/// <typeparam name="T">
+		/// One of long or ulong
+		/// </typeparam>
+		/// <param name="e">
+		/// The libdwarf getter for the wanted discriminant entry
+		/// </param>
+		/// <returns>
+		/// All discriminants via that getter
+		/// </returns>
 		private (ushort, T, T)[] discriminants<T>(discr_entry<T> e)
 		{
 			var bp = wrapGetter<IntPtr>(dwarf_formblock);
@@ -221,6 +240,11 @@ namespace Dwarf
 			return r;
 		}
 
+		/// <summary>
+		/// Determines if this attribute has the given form.
+		/// </summary>
+		/// <param name="form">A formcode</param>
+		/// <returns>Whether it has that form</returns>
 		public bool HasForm(Form form)
 			=> dwarf_hasform(Handle, (ushort)form, out int has, out IntPtr error)
 				.handle("dwarf_hasform", error, has != 0);
@@ -237,7 +261,5 @@ namespace Dwarf
 		public ulong ToGlobalOffset(ulong offset)
 			=> dwarf_convert_to_global_offset(Handle, offset, out ulong go, out IntPtr error)
 				.handle("dwarf_convert_to_global_offset", error, go);
-
-	
 	}
 }
