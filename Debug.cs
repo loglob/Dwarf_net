@@ -127,6 +127,47 @@ namespace Dwarf
 		}
 	}
 
+	public struct SectionInfo
+	{
+		public string RealName;
+
+		/// <summary>
+		/// Indicats that the section name started with .zdebug (indicating compression was done).
+		/// </summary>
+		public bool Compressed;
+
+		/// <summary>
+		/// Indicates that the initial bytes of the section started with the ASCII characters
+		/// ZLIB and the section was compressed.
+		/// </summary>
+		public bool zlibCompressed;
+
+		/// <summary>
+		/// Indicates that the Elf section sh_flag SHF_COMPRESSED is set
+		/// and the section was compressed.
+		/// </summary>
+		public bool shfCompressed;
+
+		public ulong CompressedLength;
+		public ulong UncompressedLength;
+	}
+
+	public struct SectionSizes
+	{
+		public ulong debug_info;
+		public ulong debug_abbrev;
+		public ulong debug_line;
+		public ulong debug_loc;
+		public ulong debug_aranges;
+		public ulong debug_macinfo;
+		public ulong debug_pubnames;
+		public ulong debug_str;
+		public ulong debug_frame;
+		public ulong debug_ranges;
+		public ulong debug_pubtypes;
+		public ulong debug_types;
+	}
+
 	public class Debug : HandleWrapper
 	{
 #region Fields
@@ -270,6 +311,62 @@ namespace Dwarf
 				.Select(i => GetLocationList((ulong)i))
 				.ToArray();
 
+		/// <summary>
+		/// The secton sizes
+		/// </summary>
+		public SectionSizes SectionSizes
+		{
+			get
+			{
+				var ss = new SectionSizes();
+
+				Wrapper.dwarf_get_section_max_offsets_b(Handle,
+					out ss.debug_info,
+					out ss.debug_abbrev,
+					out ss.debug_line,
+					out ss.debug_loc,
+					out ss.debug_aranges,
+					out ss.debug_macinfo,
+					out ss.debug_pubnames,
+					out ss.debug_str,
+					out ss.debug_frame,
+					out ss.debug_ranges,
+					out ss.debug_pubtypes,
+					out ss.debug_types
+				).handle("dwarf_get_section_max_offsets_b", IntPtr.Zero);
+
+				return ss;
+			}
+		}
+
+		/// <summary>
+		/// If true (the default) then the applicable
+		/// <c>.rela</c> section (if one exists) will be processed and applied to any DWARF section
+		/// when it is read in.
+		/// <br/>
+		/// If false, no such relocation-application is attempted.
+		/// <br/>
+		/// Not all machine types (elf header e_machine) or all relocations are supported,
+		/// but then very few relocation types apply to DWARF debug sections.
+		/// </summary>
+		public static bool UseRelaSection
+		{
+			set
+			{
+                Wrapper.dwarf_set_reloc_application(value ? 1 : 0);
+            }
+			
+			get
+			{
+                int v = Wrapper.dwarf_set_reloc_application(1);
+
+				if(v != 1)
+                    Wrapper.dwarf_set_reloc_application(v);
+
+                return v != 0;
+            }
+		}
+
 #endregion
 
 #region Constructors
@@ -379,7 +476,7 @@ namespace Dwarf
 		{
 			var co = NextUnitOffset;
 			var dies = new List<Die>();
-			
+
 			do
 			{
 				var cu = NextUnit(isInfo);
@@ -461,7 +558,7 @@ namespace Dwarf
 					out IntPtr buf, out ulong count,
 					out IntPtr error
 				).handle("dwarf_offset_list", error, buf.PtrToArray<ulong>((long)count));
-		
+
 		/// <summary>
 		/// Retrives a location list with the given index.
 		/// </summary>
@@ -473,6 +570,39 @@ namespace Dwarf
 		/// </returns>
 		public LocationList GetLocationList(ulong index)
 			=> new LocationList(this, index);
+
+		/// <summary>
+		/// Elf sections are sometimes compressed to reduce the disk footprint of the sections.
+		/// It’s sometimes interesting to library users what the real name was in the object file
+		/// and whether it was compressed. Libdwarf decompresses such sections automatically.
+		/// It’s not usually necessary to know the true name or anything about compression.
+		/// </summary>
+		/// <param name="name">
+		/// A standard section name such as ".debug_info"
+		/// </param>
+		/// <returns>
+		/// Information about the original source for that section
+		/// </returns>
+		public SectionInfo GetSectionInfo(string name)
+		{
+			var si = new SectionInfo();
+
+			Wrapper.dwarf_get_real_section_name(Handle, name,
+				out si.RealName,
+				out byte compressed,
+				out byte zlib,
+				out byte shf,
+				out si.CompressedLength,
+				out si.UncompressedLength,
+				out IntPtr error
+			).handle("dwarf_get_real_section_name", error);
+
+			si.Compressed     = compressed != 0;
+			si.zlibCompressed = zlib != 0;
+			si.shfCompressed  = shf != 0;
+
+			return si;
+		}
 
 #endregion
 
