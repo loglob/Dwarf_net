@@ -6,7 +6,7 @@ Before building with `dotnet build`, you must run `./Defines.csx`
 
 This requires [dotnet-script](https://github.com/filipw/dotnet-script).
 
-Libdwarf must be installed at runtime (but not build time).
+Libdwarf must be installed at run- and buildtime.
 
 ## Using
 To start, open a `Debug` instance via one of the class's constructors.
