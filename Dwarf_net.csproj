@@ -5,5 +5,19 @@
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>9.0</LangVersion>
   </PropertyGroup>
+  <PropertyGroup>
+    <PackageId>Dwarf.NET</PackageId>
+    <Version>0.9.0</Version>
+    <Authors>loglob</Authors>
+    <Description>.NET wrapper for libdwarf</Description>
+    <RepositoryUrl>https://github.com/loglob/Dwarf_Net</RepositoryUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>AGPL-3.0-only</PackageLicenseExpression>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath=""/>
+  </ItemGroup>  
+
 
 </Project>
